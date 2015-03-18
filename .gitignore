@@ -1,0 +1,4 @@
+*.d
+*.o
+image
+image.sym
