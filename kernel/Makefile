@@ -1,0 +1,28 @@
+ARCH        ?= x86
+
+BASE_CFLAGS := -Wall -Wextra -Werror -std=c99 -pedantic \
+               -ffreestanding -m32 -g -O2
+BASE_AFLAGS := -DASM_FILE -m32 -g
+BASE_LFLAGS := -nostdlib -nostdinc
+CWD         := $(CURDIR)
+KERN_DIR    := $(CWD)
+ARCH_DIR    := $(KERN_DIR)/arch/$(ARCH)
+
+export CC          ?= clang
+export LD          ?= ld
+export OBJCOPY     ?= objcopy
+export MAKE        ?= make
+export CFLAGS      += $(BASE_CFLAGS)
+export AFLAGS      += $(BASE_AFLAGS)
+export LFLAGS      += $(BASE_LFLAGS)
+export OBJECTS     :=
+
+.PHONY: all
+all: image
+
+image:
+	$(MAKE) --directory=$(ARCH_DIR) image
+
+.PHONY: clean
+clean:
+	$(MAKE) --directory=$(ARCH_DIR) clean
