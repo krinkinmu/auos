@@ -2,21 +2,33 @@ OUTPUT_FORMAT("elf32-i386", "elf32-i386", "elf32-i386")
 OUTPUT_ARCH(i386)
 ENTRY(_start)
 
+PAGE_OFFSET = 0xC0000000;
+PAGE_SIZE   = 0x00001000;
+
 SECTIONS
 {
 	/* GRUB will load kernel in memory starting from 1Mb */
 	. = 1M;
-	__kernel_begin = .;
 	.header    : { *(.header) }
-	.bootstrap : { *(.bootstrap) }
+
+	. += PAGE_OFFSET;
+	__kernel_begin = .;
+	.bootstrap : AT(ADDR(.bootstrap) - PAGE_OFFSET) { *(.bootstrap) }
 
 	.text   : { *(.text)   *(.text.*) }
 	.rodata : { *(.rodata) *(.rodata.*) }
 	.data   : { *(.data)   *(.data.*) }
 
+	. = ALIGN(PAGE_SIZE);
 	__bss_begin = .;
 	.bss : { *(.bss) }
 	__bss_end = .;
+
+	. = ALIGN(PAGE_SIZE);
+	__heap_begin = .;
+	.heap : { . += 64 * 1024; }
+	__heap_end = .;
+
 	__kernel_end = .;
 
 	.debug_aranges 0 : { *(.debug_aranges) }
