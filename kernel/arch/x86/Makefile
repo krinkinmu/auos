@@ -2,6 +2,8 @@ CWD         := $(CURDIR)
 ARCH_DIR    := $(CWD)
 BOOT_DIR    := $(CWD)/boot
 
+CFLAGS      += -mno-sse -mno-mmx
+
 include $(BOOT_DIR)/makefile.mk
 OBJECTS += $(BOOT_ASM_SOURCES:.S=.o) $(BOOT_C_SOURCES:.c=.o)
 
