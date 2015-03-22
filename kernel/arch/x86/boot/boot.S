@@ -111,7 +111,12 @@ inner_loop:
 1:
 	addl	$PAGE_OFFSET, %esp
 
-	/* we have finised initial setup and ready to start kernel */
+	/*
+	 we have finised initial setup and ready to start kernel,
+	 ebx contains pointer to multiboot info (and we stored it alive
+	 along the previous code) pass it via stack.
+	*/
+	push	%ebx
 	call	main
 
 halt:
