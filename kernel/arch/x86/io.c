@@ -15,30 +15,25 @@ static void newline(void)
 	row = (row + 1) % ROWS;
 }
 
-int putchar(int c)
+void putchar(int c)
 {
 	const unsigned shift = (col + row * COLS) * 2;
 
-	if (c == '\n') {
+	if (c == '\n')
 		newline();
-		return c;
-	}
 
 	*(VMEM + shift) = c & 0xFF;
 	*(VMEM + shift + 1) = ATTR;
 
 	if (++col == COLS)
 		newline();
-
-	return c;
 }
 
-int puts(const char *asciz)
+void puts(const char *asciz)
 {
 	while (*asciz)
 		putchar(*asciz++);
 	putchar('\n');
-	return 0;
 }
 
 void init_io()
