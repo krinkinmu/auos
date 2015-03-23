@@ -5,10 +5,14 @@ BOOT_DIR    := $(CWD)/boot
 CFLAGS      += -mno-sse -mno-mmx
 
 include $(BOOT_DIR)/makefile.mk
-OBJECTS += $(BOOT_ASM_SOURCES:.S=.o) $(BOOT_C_SOURCES:.c=.o)
+OBJECTS += \
+	$(addprefix $(BOOT_DIR)/, $(BOOT_ASM_SOURCES:.S=.o)) \
+	$(addprefix $(BOOT_DIR)/, $(BOOT_C_SOURCES:.c=.o))
 
 include $(ARCH_DIR)/makefile.mk
-OBJECTS += $(ARCH_ASM_SOURCES:.S=.o) $(ARCH_C_SOURCES:.c=.o)
+OBJECTS += \
+	$(addprefix $(ARCH_DIR)/, $(ARCH_ASM_SOURCES:.S=.o)) \
+	$(addprefix $(ARCH_DIR)/, $(ARCH_C_SOURCES:.c=.o))
 
 include ../../common.mk
 

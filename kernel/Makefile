@@ -16,10 +16,12 @@ export MAKE        ?= make
 export CFLAGS      += $(BASE_CFLAGS)
 export AFLAGS      += $(BASE_AFLAGS)
 export LFLAGS      += $(BASE_LFLAGS)
-export OBJECTS     :=
 
 .PHONY: all
 all: image
+
+include makefile.mk
+export OBJECTS     := $(addprefix $(KERN_DIR)/, $(ARCH_C_SOURCES:.c=.o))
 
 image:
 	$(MAKE) --directory=$(ARCH_DIR) image
