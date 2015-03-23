@@ -1,1 +1,1 @@
-ARCH_C_SOURCES   := utility.c
+C_SOURCES   := utility.c

@@ -21,7 +21,7 @@ export LFLAGS      += $(BASE_LFLAGS)
 all: image
 
 include makefile.mk
-export OBJECTS     := $(addprefix $(KERN_DIR)/, $(ARCH_C_SOURCES:.c=.o))
+export OBJECTS     := $(addprefix $(KERN_DIR)/, $(C_SOURCES:.c=.o))
 
 image:
 	$(MAKE) --directory=$(ARCH_DIR) image
