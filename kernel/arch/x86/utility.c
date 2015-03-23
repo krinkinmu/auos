@@ -8,6 +8,15 @@ void * memset(void *ptr, int value, unsigned long size)
 	return ptr;
 }
 
+void * memcpy(void *dst, const void *src, unsigned long size)
+{
+	const char *from = src;
+
+	for (char *to = dst; size--; *to++ = *from++);
+
+	return dst;
+}
+
 void ultoa(char *buf, unsigned long d, int base)
 {
 	char *begin = buf;
