@@ -28,4 +28,5 @@ image:
 
 .PHONY: clean
 clean:
+	rm -f *.o *.d
 	$(MAKE) --directory=$(ARCH_DIR) clean
