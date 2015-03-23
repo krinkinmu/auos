@@ -1,5 +1,13 @@
+#include <arch/x86/memory.h>
+
+#include "utility.h"
 #include "multiboot.h"
 #include "io.h"
+
+static inline void clone_pgd_range(pgd_t *dst, pgd_t *src, int count)
+{
+	memcpy(dst, src, count * sizeof(pgd_t));
+}
 
 void setup_arch(void *bootstrap)
 {
@@ -17,6 +25,11 @@ void setup_arch(void *bootstrap)
 			addr, addr + size - 1, type);
 		mmap_entry += entry->size + sizeof(entry->size);
 	}
+
+	clone_pgd_range(swapper_page_dir + KERNEL_PGD_BOUNDARY,
+			initial_page_dir + KERNEL_PGD_BOUNDARY,
+			KERNEL_PGD_PTRS);
+	load_cr3(phys_addr(swapper_page_dir));
 }
 
 void main(void *bootstrap)
