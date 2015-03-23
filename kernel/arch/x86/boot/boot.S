@@ -1,6 +1,6 @@
+#include <arch/x86/memory.h>
+#include <arch/x86/cpu.h>
 #include "boot.h"
-#include "arch/x86/layout.h"
-#include "arch/x86/cpu.h"
 
 	/* multiboot header, required by GRUB */
 	.section ".header", "a"
@@ -158,5 +158,12 @@ gdt_descr:
 stack_top:
 
 	.align PAGE_SIZE
+	.global initial_page_dir
 initial_page_dir:
 	.fill 1024, 4, 0
+
+	.align PAGE_SIZE
+	.global swapper_page_dir
+swapper_page_dir:
+	.fill 1024, 4, 0
+
