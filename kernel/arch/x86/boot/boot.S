@@ -94,7 +94,8 @@ inner_loop:
 	 Now we have two mappings for kernel physical address space,
 	 but paging is not enabled yet.
 
-	 Drop EFLAGS, enable paging, reset pipeline and fix addresses.
+	 Drop EFLAGS, enable paging, reload gdt, reset pipeline and fix
+	 addresses.
 	*/
 	pushl	$0
 	popfl
@@ -107,6 +108,14 @@ inner_loop:
 	movl	$CR0_STATE, %eax
 	movl	%eax, %cr0
 
+	/* load new gdt descriptor with fixed address */
+	lgdt	gdt_descr
+	movl	$BOOT_DS, %eax
+	movl	%eax, %ds
+	movl	%eax, %es
+	movl	%eax, %fs
+	movl	%eax, %gs
+	movl	%eax, %ss	
 	ljmp	$BOOT_CS, $1f
 1:
 	addl	$PAGE_OFFSET, %esp
@@ -128,14 +137,19 @@ halt:
 	 align gdt on cache line size (128 is max possible value, as i know)
 	*/
 	.align 128
-boot_gdt:
+gdt:
 	/* first gdt entry must be null */
 	.quad 0x0000000000000000
 	.quad 0x00cf9a000000ffff
 	.quad 0x00cf92000000ffff
+
 boot_gdt_descr:
-	.word (boot_gdt_descr - boot_gdt - 1)
-	.long pa(boot_gdt)
+	.word (boot_gdt_descr - gdt - 1)
+	.long pa(gdt)
+
+gdt_descr:
+	.word (boot_gdt_descr - gdt - 1)
+	.long gdt
 
 	/* early boot stack is in .bss section */
 	.bss
