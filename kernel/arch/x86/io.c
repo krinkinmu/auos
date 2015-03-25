@@ -1,11 +1,12 @@
 #include <stdarg.h>
-#include "utility.h"
+#include <arch/x86/memory.h>
+#include <utility.h>
 #include "io.h"
 
 static const unsigned ROWS = 24;
 static const unsigned COLS = 80;
 static const char ATTR = 7;
-static char * const VMEM = (char *)0xB8000;
+static char * const VMEM = (char *)(PAGE_OFFSET + 0xB8000);
 
 static unsigned row;
 static unsigned col;
