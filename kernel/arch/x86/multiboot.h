@@ -3,6 +3,8 @@
 
 #include <inttypes.h>
 
+#define MULTIBOOT_AVAILABLE 1
+
 struct multiboot_info {
 	uint32_t flags;
 
