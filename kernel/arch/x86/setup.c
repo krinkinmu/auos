@@ -1,6 +1,6 @@
 #include <arch/x86/memory.h>
-
-#include "utility.h"
+#include <utility.h>
+#include "memblock.h"
 #include "multiboot.h"
 #include "io.h"
 
@@ -17,12 +17,20 @@ void setup_arch(void *bootstrap)
 
 	while (mmap_entry < mmap_end) {
 		struct multiboot_mmap_entry *entry = (void *)mmap_entry;
-		unsigned long addr = entry->addr;
-		unsigned long size = entry->len;
+		unsigned long long addr = entry->addr;
+		unsigned long long size = entry->len;
 		unsigned long type = entry->type;
 
+		if (addr + size - 1 > PHYS_MEM_MAX)
+			continue;
+
+		if (type == MULTIBOOT_AVAILABLE)
+			memblock_add(addr, size);
+
 		printf("memory region: 0x%x-0x%x type=%u\n",
-			addr, addr + size - 1, type);
+			(unsigned long)addr,
+			(unsigned long)(addr + size - 1),
+			type);
 		mmap_entry += entry->size + sizeof(entry->size);
 	}
 
