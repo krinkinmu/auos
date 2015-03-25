@@ -22,13 +22,11 @@ SECTIONS
 	. = ALIGN(PAGE_SIZE);
 	__bss_begin = .;
 	.bss : { *(.bss) }
-	__bss_end = .;
-
 	. = ALIGN(PAGE_SIZE);
 	__heap_begin = .;
-	.heap : { . += 64 * 1024; }
+	.brk : { . += 1M; }
 	__heap_end = .;
-
+	__bss_end = .;
 	__kernel_end = .;
 
 	.debug_aranges 0 : { *(.debug_aranges) }
