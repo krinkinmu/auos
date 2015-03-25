@@ -1,6 +1,7 @@
 #ifndef __MEMORY_H__
 #define __MEMORY_H__
 
+#define PHYS_MEM_MAX 0xFFFFFFFF
 #define PAGE_OFFSET  0xC0000000
 #define PAGE_SHIFT   12
 #define PAGE_SIZE    (1 << 12)
@@ -8,7 +9,6 @@
 #define PGDIR_SIZE   (1 << 22)
 #define PTRS_PER_PTE 1024
 #define PTRS_PER_PGD 1024
-#define pa(x)        ((x) - PAGE_OFFSET)
 
 #ifndef ASM_FILE
 #define pgd_index(ptr) \

@@ -1,6 +1,9 @@
 #ifndef __BOOT_H__
 #define __BOOT_H__
 
+#include <arch/x86/memory.h>
+#include <arch/x86/cpu.h>
+
 /* multiboot definitions */
 #define MB_HEADER_MAGIC 0x1BADB002
 #define MB_BOOT_MAGIC   0x2BADB002
@@ -17,5 +20,7 @@
 
 #define PTE_INIT_ATTR        0x00000003
 #define PDE_INIT_ATTR        0x00000003
+
+#define pa(x) ((x) - PAGE_OFFSET)
 
 #endif /*__BOOT_H__*/
