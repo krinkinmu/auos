@@ -1,5 +1,3 @@
-#include <arch/x86/memory.h>
-#include <arch/x86/cpu.h>
 #include "boot.h"
 
 	/* multiboot header, required by GRUB */
@@ -58,8 +56,8 @@ reload_cs:
 	 %eax - current pysical address + initial pte entry attributes
 
 	 Initialization contains 3 steps:
-	  - initial page tables are stored starting from __heap_begin, so
-	    initialize to __heap_begin physical address;
+	  - initial page tables are stored starting from __heap_end, so
+	    initialize to __heap_end physical address;
 	  - store initial_page_dir physical address to %edx;
 	  - store initial pte entry attribute to %eax.
 
@@ -86,9 +84,11 @@ inner_loop:
 	addl	$PAGE_SIZE, %eax
 	loop	inner_loop
 
-	movl	$pa(__kernel_end) + PTE_INIT_ATTR, %ebp
+	movl	$pa(__kernel_end) + MAPPING_BEYOND_END + PTE_INIT_ATTR, %ebp
 	cmpl	%ebp, %eax
 	jb	outer_loop
+
+	movl	%edi, pa(__heap_end)
 
 	/*
 	 Now we have two mappings for kernel physical address space,
@@ -115,7 +115,7 @@ inner_loop:
 	movl	%eax, %es
 	movl	%eax, %fs
 	movl	%eax, %gs
-	movl	%eax, %ss	
+	movl	%eax, %ss
 	ljmp	$BOOT_CS, $1f
 1:
 	addl	$PAGE_OFFSET, %esp
