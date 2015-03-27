@@ -4,7 +4,7 @@
 #include "multiboot.h"
 #include "io.h"
 
-unsigned long __heap_end;
+unsigned long __heap_end = phys_addr(__heap_begin);
 
 static inline void clone_pgd_range(pgd_t *dst, pgd_t *src, int count)
 {
@@ -43,6 +43,8 @@ void setup_memory(struct multiboot_info *mbi)
 	unsigned long kern_size = kern_end - kern_addr;
 
 	fill_memblock(mbi);
+
+	printf("reserve kernel memory: 0x%x-0x%x\n", kern_addr, kern_end - 1);
 	memblock_reserve(kern_addr, kern_size);
 
 	clone_pgd_range(swapper_page_dir + KERNEL_PGD_BOUNDARY,
