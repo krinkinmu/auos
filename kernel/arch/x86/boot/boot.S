@@ -10,7 +10,7 @@
 
 
 	.section ".bootstrap", "ax"
-	.extern main
+	.extern start_kernel
 	.global _start
 _start:
 	/* first of all load our gdt */
@@ -126,7 +126,7 @@ inner_loop:
 	 along the previous code) pass it via stack.
 	*/
 	push	%ebx
-	call	main
+	call	start_kernel
 
 halt:
 	hlt
