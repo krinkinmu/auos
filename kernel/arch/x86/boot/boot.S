@@ -22,8 +22,8 @@ _start:
 	movl	%eax, %gs
 	movl	%eax, %ss
 
-	ljmp	$(BOOT_CS), $pa(reload_cs)
-reload_cs:
+	ljmp	$(BOOT_CS), $1f
+1:
 	/*
 	 Now we use custom gdt that covers all address space.
 	 Protected mode is enabled by GRUB, paging is disabled.
@@ -84,7 +84,7 @@ inner_loop:
 	addl	$PAGE_SIZE, %eax
 	loop	inner_loop
 
-	movl	$pa(__kernel_end) + MAPPING_BEYOND_END + PTE_INIT_ATTR, %ebp
+	movl	$pa(__kernel_end) + PTE_INIT_ATTR, %ebp
 	cmpl	%ebp, %eax
 	jb	outer_loop
 

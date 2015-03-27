@@ -23,8 +23,4 @@
 
 #define pa(x) ((x) - PAGE_OFFSET)
 
-#define PAGE_TABLE_SIZE(pages) ((pages) / PTRS_PER_PGD)
-#define LOWMEM_PAGES           (((1 << 32) - PAGE_OFFSET) >> PAGE_SHIFT)
-#define MAPPING_BEYOND_END     PAGE_TABLE_SIZE(LOWMEM_PAGES) << PAGE_SHIFT
-
 #endif /*__BOOT_H__*/
