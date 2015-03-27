@@ -22,15 +22,13 @@
 typedef unsigned long pgdval_t;
 typedef unsigned long pteval_t;
 
-typedef struct { pgdval_t pgd; } pde_t;
+typedef struct { pgdval_t pde; } pde_t;
 typedef struct { pteval_t pte; } pte_t;
 
 extern pde_t swapper_page_dir[PTRS_PER_PGD];
 extern pde_t initial_page_dir[PTRS_PER_PGD];
 
 extern char __kernel_begin[], __kernel_end[];
-extern char __bss_begin[], __bss_end[];
-extern char __heap_begin[];
 
 struct multiboot_info;
 void setup_memory(struct multiboot_info *mbi);
