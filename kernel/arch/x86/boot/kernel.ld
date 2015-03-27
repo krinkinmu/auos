@@ -10,22 +10,22 @@ SECTIONS
 	/* GRUB will load kernel in memory starting from 1Mb */
 	. = 1M;
 	.header    : { *(.header) }
+	.bootstrap : { *(.bootstrap) }
 
 	. += PAGE_OFFSET;
 	__kernel_begin = .;
-	.bootstrap : AT(ADDR(.bootstrap) - PAGE_OFFSET) { *(.bootstrap) }
 
-	.text   : { *(.text)   *(.text.*) }
+	.text   : AT(ADDR(.text) - PAGE_OFFSET) { *(.text)   *(.text.*) }
 	.rodata : { *(.rodata) *(.rodata.*) }
 	.data   : { *(.data)   *(.data.*) }
 
 	. = ALIGN(PAGE_SIZE);
 	__bss_begin = .;
 	.bss : { *(.bss) }
+
 	. = ALIGN(PAGE_SIZE);
 	__heap_begin = .;
 	.brk : { . += 1M; }
-	__heap_end = .;
 	__bss_end = .;
 	__kernel_end = .;
 
