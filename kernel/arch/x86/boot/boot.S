@@ -13,24 +13,15 @@
 	.extern start_kernel
 	.global _start
 _start:
-	/* first of all load our gdt */
-	lgdt	pa(boot_gdt_descr)
-	movl	$(BOOT_DS), %eax
-	movl	%eax, %ds
-	movl	%eax, %es
-	movl	%eax, %fs
-	movl	%eax, %gs
-	movl	%eax, %ss
-
-	ljmp	$(BOOT_CS), $1f
-1:
 	/*
-	 Now we use custom gdt that covers all address space.
 	 Protected mode is enabled by GRUB, paging is disabled.
 	 Binary image is compiled to work in high address, so
 	 we have translate all virtual address to physical
 	 addresses manually by pa macro.
 	*/
+
+	/* load stack pointer as soon as possible */
+	movl	$pa(stack_top), %esp
 
 	/* fill .bss section with zeroes */
 	xorl	%eax, %eax
@@ -41,61 +32,42 @@ _start:
         rep
         stosl
 
-	/* load stack pointer */
-	movl	$pa(stack_top), %esp
-
 	/*
-	 Map map first severeal MB of physical memory to virtual
-	 address space from 0 address (identity mapping) and to
-	 vritual address space from PAGE_OFFSET address (kernel
-	 mapping).
-
-	 Invariant:
-	 %edi - pointer to page table entry (byte offset of current pte entry)
-	 %edx - pointer to page dir entry (byte offset of current pde entry)
-	 %eax - current pysical address + initial pte entry attributes
-
-	 Initialization contains 3 steps:
-	  - initial page tables are stored starting from __heap_end, so
-	    initialize to __heap_end physical address;
-	  - store initial_page_dir physical address to %edx;
-	  - store initial pte entry attribute to %eax.
-
-	 Than run two nested loops, outer loop iterates over pde entries,
-         inner loop iterates over pte entries.
-
-	 PDE_OFFSET is offset of PAGE_OFFSET address pde entry in bytes.
+	 Fill page tables for low memory (1Gb of physical memory)
 	*/
-PDE_OFFSET = (PAGE_OFFSET >> 20);
-
+LOW_MEM_SIZE   = (1024 * 1024 * 1024);
+LOW_MEM_FRAMES = (LOW_MEM_SIZE / PAGE_SIZE);
 	movl	$pa(__heap_begin), %edi
-	movl	$pa(initial_page_dir), %edx
 	movl	$PTE_INIT_ATTR, %eax
-
-outer_loop:
-	leal	PDE_INIT_ATTR(%edi), %ecx
-	movl	%ecx, (%edx)
-	movl	%ecx, PDE_OFFSET(%edx)
-	addl	$4, %edx
-	movl	$1024, %ecx
-
-inner_loop:
+	movl	$LOW_MEM_FRAMES, %ecx
+1:
 	stosl
 	addl	$PAGE_SIZE, %eax
-	loop	inner_loop
+	loop	1b
 
-	movl	$pa(__kernel_end) + PTE_INIT_ATTR, %ebp
-	cmpl	%ebp, %eax
-	jb	outer_loop
-
-	movl	%edi, pa(__heap_end)
+	/*
+	 Map [0, 1Gb) and [PAGE_OFFSET, PAGE_OFFSET + 1Gb) virtual address
+	 ranges to [0, 1Gb) range of physical memory.
+	*/
+PDE_OFFSET     = (PAGE_OFFSET >> 20);
+LOW_MEM_TABLES = (LOW_MEM_FRAMES / PTRS_PER_PT);
+	movl	$pa(__heap_begin), %esi
+	movl	$pa(initial_page_dir), %edx
+	movl	$LOW_MEM_TABLES, %ecx
+1:
+	leal	PDE_INIT_ATTR(%esi), %eax
+	movl	%eax, (%edx)
+	movl	%eax, PDE_OFFSET(%edx)
+	addl	$4, %edx
+	addl	$PAGE_SIZE, %esi
+	loop	1b
 
 	/*
 	 Now we have two mappings for kernel physical address space,
 	 but paging is not enabled yet.
 
-	 Drop EFLAGS, enable paging, reload gdt, reset pipeline and fix
-	 addresses.
+	 Drop EFLAGS, enable paging, load gdt, reset pipeline and stack
+	 pointer.
 	*/
 	pushl	$0
 	popfl
@@ -108,7 +80,6 @@ inner_loop:
 	movl	$CR0_STATE, %eax
 	movl	%eax, %cr0
 
-	/* load new gdt descriptor with fixed address */
 	lgdt	gdt_descr
 	movl	$BOOT_DS, %eax
 	movl	%eax, %ds
@@ -118,6 +89,7 @@ inner_loop:
 	movl	%eax, %ss
 	ljmp	$BOOT_CS, $1f
 1:
+
 	addl	$PAGE_OFFSET, %esp
 
 	/*
@@ -142,28 +114,22 @@ gdt:
 	.quad 0x0000000000000000
 	.quad 0x00cf9a000000ffff
 	.quad 0x00cf92000000ffff
-
-boot_gdt_descr:
-	.word (boot_gdt_descr - gdt - 1)
-	.long pa(gdt)
-
 gdt_descr:
-	.word (boot_gdt_descr - gdt - 1)
+	.word (gdt_descr - gdt - 1)
 	.long gdt
 
-	/* early boot stack is in .bss section */
+	/* kernel stack is in .bss section */
 	.bss
 	.align PAGE_SIZE
 	.space BOOT_TIME_STACK_SIZE
 stack_top:
 
 	.align PAGE_SIZE
-	.global initial_page_dir
-initial_page_dir:
-	.fill 1024, 4, 0
-
-	.align PAGE_SIZE
 	.global swapper_page_dir
 swapper_page_dir:
 	.fill 1024, 4, 0
 
+	.align PAGE_SIZE
+	.global initial_page_dir
+initial_page_dir:
+	.fill 1024, 4, 0
