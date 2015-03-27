@@ -16,7 +16,7 @@
 
 #define KERNEL_PGD_BOUNDARY pgd_index(PAGE_OFFSET)
 #define KERNEL_PGD_PTRS     (PTRS_PER_PGD - KERNEL_PGD_BOUNDARY)
-#define phys_addr(x)        ((void *)((unsigned long)(x) - PAGE_OFFSET))
+#define phys_addr(x)        ((unsigned long)(x) - PAGE_OFFSET)
 
 typedef unsigned long pgdval_t;
 typedef unsigned long pteval_t;
@@ -27,7 +27,14 @@ typedef struct { pteval_t pte; } pte_t;
 extern pgd_t swapper_page_dir[PTRS_PER_PGD];
 extern pgd_t initial_page_dir[PTRS_PER_PGD];
 
-static inline void load_cr3(pgd_t *pde)
+extern char __kernel_begin[], __kernel_end[];
+extern char __bss_begin[], __bss_end[];
+extern char __heap_begin[];
+
+struct multiboot_info;
+void setup_memory(struct multiboot_info *mbi);
+
+static inline void load_cr3(unsigned long pde)
 { __asm__ ("movl %0, %%cr3" : : "a"(pde)); }
 #endif /* ASM_FILE */
 
