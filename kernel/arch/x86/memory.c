@@ -7,8 +7,14 @@
 #include "memblock.h"
 #include "multiboot.h"
 
-static void fill_memory_map(struct multiboot_info *mbi)
+void init_page_alloc(void);
+
+unsigned long page_frames;
+unsigned long low_mem_page_frames;
+
+static void init_phys_mem_map(struct multiboot_info *mbi)
 {
+	unsigned long long max_phys_addr = 0;
 	unsigned long mmap_entry = mbi->mmap_addr;
 	unsigned long mmap_end = mmap_entry + mbi->mmap_length;
 
@@ -17,13 +23,15 @@ static void fill_memory_map(struct multiboot_info *mbi)
 		struct multiboot_mmap_entry *entry = (void *)mmap_entry;
 		unsigned long long addr = entry->addr;
 		unsigned long long size = entry->len;
+		unsigned long long last = addr + size - 1;
 		unsigned long type = entry->type;
 
-		if (addr + size - 1 > PHYS_MEM_MAX)
-			continue;
 
-		if (type == MULTIBOOT_AVAILABLE)
+		if (type == MULTIBOOT_AVAILABLE) {
+			if (last > max_phys_addr)
+				max_phys_addr = last;
 			memblock_add(addr, size);
+		}
 
 		debug("memory region: 0x%x-0x%x type=%u\n",
 			(unsigned long)addr,
@@ -31,6 +39,16 @@ static void fill_memory_map(struct multiboot_info *mbi)
 			type);
 		mmap_entry += entry->size + sizeof(entry->size);
 	}
+
+	if (max_phys_addr > PHYS_MEM_MAX)
+		max_phys_addr = PHYS_MEM_MAX;
+
+	page_frames = 1 + ((max_phys_addr - PAGE_SIZE + 1) >> PAGE_SHIFT);
+	low_mem_page_frames = LOW_PAGE_FRAMES_MAX;
+	if (low_mem_page_frames > page_frames)
+		low_mem_page_frames = page_frames;
+	debug("Page frames at all: 0x%x\n", page_frames);
+	debug("Low mem page frames at all: 0x%x\n", low_mem_page_frames);
 }
 
 static void remap_lower_memory(void)
@@ -54,7 +72,8 @@ static void reserve_kernel_memory(void)
 
 void setup_memory(struct multiboot_info *mbi)
 {
-	fill_memory_map(mbi);
+	init_phys_mem_map(mbi);
 	reserve_kernel_memory();
 	remap_lower_memory();
+	init_page_alloc();
 }
