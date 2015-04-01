@@ -1,9 +1,8 @@
-#include <kernel.h>
-#include <debug.h>
-#include <utility.h>
+#include <kernel/kernel.h>
+#include <kernel/debug.h>
+#include <kernel/utility.h>
 
-#include <arch/x86/memory.h>
-
+#include "memory.h"
 #include "memblock.h"
 
 #define MEMBLOCK_REGIONS 128
@@ -11,7 +10,7 @@
 static struct memblock_region all_regions[MEMBLOCK_REGIONS];
 static struct memblock_region reserved_regions[MEMBLOCK_REGIONS];
 
-struct memblock memblock = {
+static struct memblock memblock = {
 	.memory.regions    = all_regions,
 	.memory.size       = 0,
 	.memory.capacity   = MEMBLOCK_REGIONS,
@@ -52,7 +51,7 @@ static int memblock_regions_overlap(const struct memblock_region *lhs,
 }
 
 static void memblock_region_remove(struct memblock_type *type,
-				unsigned long i)
+				unsigned i)
 {
 	for (; i + 1 < type->size; ++i)
 		type->regions[i] = type->regions[i + 1];
@@ -60,12 +59,12 @@ static void memblock_region_remove(struct memblock_type *type,
 }
 
 static int memblock_region_insert(struct memblock_type *type,
-				struct memblock_region *reg, unsigned long i)
+				struct memblock_region *reg, unsigned i)
 {
 	if (type->size == type->capacity)
 		return -1;
 
-	for (unsigned long j = i + 1; j < type->size; ++j)
+	for (unsigned j = type->size; j > i; --j)
 		type->regions[j] = type->regions[j - 1];
 	type->regions[i] = *reg;
 	++type->size;
@@ -77,12 +76,13 @@ static int memblock_add_range(struct memblock_type *type,
 				unsigned long long size)
 {
 	struct memblock_region reg = { addr, size };
-	unsigned long i;
+	unsigned i;
 
 	if (!size)
 		return 0;
 
 	struct memblock_region *dst;
+
 	for (i = 0; i != type->size; ++i) {
 		dst = &type->regions[i];
 		unsigned long long rend = dst->addr + dst->size;
@@ -94,8 +94,8 @@ static int memblock_add_range(struct memblock_type *type,
 	if (i != type->size && memblock_regions_overlap(dst, &reg)) {
 		memblock_regions_merge(dst, &reg);
 		if (i + 1 != type->size &&
-		memblock_regions_overlap(dst, &type->regions[i + 1])) {
-			memblock_regions_merge(dst, &type->regions[i + 1]);
+				memblock_regions_overlap(dst, dst + 1)) {
+			memblock_regions_merge(dst, dst + 1);
 			memblock_region_remove(type, i + 1);
 		}
 		return 0;
@@ -105,15 +105,15 @@ static int memblock_add_range(struct memblock_type *type,
 }
 
 /*
- This it hard one. I'll try to explain it in details. Function takes four
+ This is hard one. I'll try to explain it in details. Function takes four
  arguments: size is size of requested memory block, align is block
  alignment, [from and to) is physical memory range in which we lookup
  memory block. Function returns physical address if allocation is
  successful and zero otherwise. Also I suppose that align is power of two.
 */
 static unsigned long memblock_find_in_range(unsigned long size,
-				unsigned long align, unsigned long from,
-				unsigned long to)
+				unsigned align, unsigned long long from,
+				unsigned long long to)
 {
 	struct memblock_type *mem = &memblock.memory;
 	struct memblock_type *res = &memblock.reserved;
@@ -121,10 +121,10 @@ static unsigned long memblock_find_in_range(unsigned long size,
 	/*
 	 j is an index of current region in reserved memory blocks array.
 	*/
-	unsigned long j = 0;
+	unsigned j = 0;
 
 	/* i iterates over all accessible memory regions. */
-	for (unsigned long i = 0; i != mem->size; ++i) {
+	for (unsigned i = 0; i != mem->size; ++i) {
 		/*
 		 If end of the current region is less or equal to from, then
 		 it is before the requested memory range, so go to the next.
@@ -146,20 +146,21 @@ static unsigned long memblock_find_in_range(unsigned long size,
 		*/
 		unsigned long long addr = mem->regions[i].addr;
 		unsigned long long end = addr + mem->regions[i].size;
-		if (addr < from)
-			addr = from;
+
+		addr = max(addr, from);
+		end = min(end, to);
 
 		while (addr < end) {
 			/* Align addr on requested border. */
-			addr = ALIGN_UP(addr, align);
+			addr = ALIGN_UP(addr, (unsigned long long)align);
 
 			/* Has the region got enough space? */
 			if (addr + size > end)
 				break;
 
 			/* [raddr, rend) is current reserved region. */
-			unsigned long long raddr;
-			unsigned long long rend;
+			unsigned long long raddr = 0;
+			unsigned long long rend = 0;
 
 			/* Iterate over reserved regions. */
 			for (; j != res->size; ++j) {
@@ -192,8 +193,8 @@ int memblock_reserve(unsigned long long addr, unsigned long long size)
 	return memblock_add_range(&memblock.reserved, addr, size);
 }
 
-unsigned long memblock_alloc_range(unsigned long size, unsigned long align,
-				unsigned long from, unsigned long to)
+unsigned long memblock_alloc_range(unsigned long size, unsigned align,
+				unsigned long long from, unsigned long long to)
 {
 	unsigned long addr = memblock_find_in_range(size, align, from, to);
 	if (addr && !memblock_reserve(addr, size)) {
@@ -203,31 +204,33 @@ unsigned long memblock_alloc_range(unsigned long size, unsigned long align,
 	return addr;
 }
 
-void memblock_free_range(unsigned long addr, unsigned long size)
-{	
-	struct memblock_type *res = &memblock.reserved;
-	unsigned long end = addr + size;
+int memblock_is_free(unsigned long addr, unsigned long size)
+{
+	unsigned long long end = (unsigned long long)addr + size;
 
-	for (unsigned long j = 0; j != res->size; ++j) {
-		unsigned long long raddr = res->regions[j].addr;
-		unsigned long long rend = raddr + res->regions[j].size;
+	return memblock_find_in_range(size, 1, addr, end) != 0;
+}
 
-		if (rend <= addr)
-			continue;
+static void memblock_list_regions(const struct memblock_type *type)
+{
+	for (unsigned i = 0; i != type->size; ++i) {
+		unsigned long addr = type->regions[i].addr;
+		unsigned long end = addr + type->regions[i].size;
 
-		if (addr == raddr && end == rend) {
-			memblock_region_remove(res, j);
-			break;
-		}
-
-		if (addr == raddr) {
-			res->regions[j].addr = end;
-			res->regions[j].size = rend - end;
-		} else {
-			res->regions[j].size = addr - raddr;
-			memblock_reserve(end, rend - end);
-		}
-		break;
+		debug("region 0x%x-0x%x\n", addr, end);
 	}
-	debug("Freed region 0x%x-0x%x\n", addr, addr + size - 1);
+}
+
+void memblock_list_reserved(void)
+{
+	struct memblock_type *res = &memblock.reserved;
+
+	memblock_list_regions(res);
+}
+
+void memblock_list_memory(void)
+{
+	struct memblock_type *mem = &memblock.memory;
+
+	memblock_list_regions(mem);
 }

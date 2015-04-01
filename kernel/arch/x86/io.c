@@ -1,7 +1,8 @@
 #include <stdarg.h>
-#include <arch/x86/memory.h>
-#include <utility.h>
-#include "io.h"
+
+#include <kernel/utility.h>
+#include <kernel/io.h>
+#include "memory.h"
 
 static const unsigned ROWS = 24;
 static const unsigned COLS = 80;

@@ -1,8 +1,8 @@
 #ifndef __BOOT_H__
 #define __BOOT_H__
 
-#include <arch/x86/memory.h>
-#include <arch/x86/cpu.h>
+#include "../memory.h"
+#include "../cpu.h"
 
 /* multiboot definitions */
 #define MB_HEADER_MAGIC 0x1BADB002

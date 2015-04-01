@@ -1,13 +1,10 @@
-#include <utility.h>
-#include <debug.h>
+#include <kernel/utility.h>
+#include <kernel/debug.h>
 
-#include <arch/x86/memory.h>
-#include <arch/x86/cpu.h>
-
+#include "memory.h"
+#include "cpu.h"
 #include "memblock.h"
 #include "multiboot.h"
-
-void init_page_alloc(void);
 
 unsigned long page_frames;
 unsigned long low_mem_page_frames;
@@ -31,6 +28,8 @@ static void init_phys_mem_map(struct multiboot_info *mbi)
 			if (last > max_phys_addr)
 				max_phys_addr = last;
 			memblock_add(addr, size);
+		} else {
+			memblock_reserve(addr, size);
 		}
 
 		debug("memory region: 0x%x-0x%x type=%u\n",
@@ -72,8 +71,10 @@ static void reserve_kernel_memory(void)
 
 void setup_memory(struct multiboot_info *mbi)
 {
+	void setup_page_alloc(void);
+
 	init_phys_mem_map(mbi);
 	reserve_kernel_memory();
 	remap_lower_memory();
-	init_page_alloc();
+	setup_page_alloc();
 }

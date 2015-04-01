@@ -1,3 +1,5 @@
+#include <kernel/utility.h>
+
 void * memset(void *ptr, int value, unsigned long size)
 {
 	const char *end = (char *)ptr + size;

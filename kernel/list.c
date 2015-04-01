@@ -1,12 +1,12 @@
-#include <list.h>
+#include <kernel/list.h>
 
-void init_list_head(struct list_head *head)
+void list_init_head(struct list_head *head)
 {
 	head->next = head;
 	head->prev = head;
 }
 
-static inline void insert_between(struct list_head *prev,
+static inline void list_insert_between(struct list_head *prev,
 			struct list_head *next, struct list_head *node)
 {
 	prev->next = node;
@@ -15,29 +15,24 @@ static inline void insert_between(struct list_head *prev,
 	node->prev = prev;
 }
 
-void insert_after(struct list_head *pos, struct list_head *next)
+void list_insert_after(struct list_head *pos, struct list_head *next)
 {
-	insert_between(pos, pos->next, next);
+	list_insert_between(pos, pos->next, next);
 }
 
-void insert_before(struct list_head *pos, struct list_head *prev)
+void list_insert_before(struct list_head *pos, struct list_head *prev)
 {
-	insert_between(pos->prev, pos, prev);
+	list_insert_between(pos->prev, pos, prev);
 }
 
-static inline void remove_between(struct list_head *prev,
+static inline void list_remove_between(struct list_head *prev,
 			struct list_head *next)
 {
 	prev->next = next;
 	next->prev = prev;
 }
 
-void remove_from_list(struct list_head *node)
+void list_remove(struct list_head *node)
 {
-	remove_between(node->prev, node->next);
-}
-
-int list_empty(struct list_head *node)
-{
-	return node->next == node;
+	list_remove_between(node->prev, node->next);
 }
