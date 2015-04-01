@@ -11,6 +11,9 @@
 #define PTRS_PER_PGD     1024
 
 #ifndef ASM_FILE
+#define PAGE_FRAMES_MAX     (1 + (PHYS_MEM_MAX >> PAGE_SHIFT))
+#define LOW_PAGE_FRAMES_MAX (1 + ((PHYS_MEM_MAX - PAGE_OFFSET) >> PAGE_SHIFT))
+
 #define pgd_index(ptr) \
 	(((unsigned long)(ptr) >> PGDIR_SHIFT) & (PTRS_PER_PGD - 1))
 
@@ -29,6 +32,8 @@ extern pde_t swapper_page_dir[PTRS_PER_PGD];
 extern pde_t initial_page_dir[PTRS_PER_PGD];
 
 extern char __kernel_begin[], __kernel_end[];
+
+extern unsigned long page_frames, low_mem_page_frames;
 
 struct multiboot_info;
 void setup_memory(struct multiboot_info *mbi);
