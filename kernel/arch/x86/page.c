@@ -56,12 +56,11 @@ static unsigned long buddy_index(unsigned long idx, unsigned order)
 	return idx ^ (1 << order);
 }
 
-void free_pages(struct page *pages)
+void free_pages(struct page *pages, unsigned order)
 {
 	struct zone *zone = page_zone(pages);
 	struct page_list_data *node = zone_node(zone);
 	unsigned long idx = node->pages - pages;
-	unsigned order = pages->order;
 
 	while (order < MAX_ORDER - 1) {
 		unsigned long bidx = buddy_index(idx, order);
@@ -69,7 +68,7 @@ void free_pages(struct page *pages)
 			break;
 
 		struct page *buddy = &node->pages[bidx];
-		if (order != buddy->order)
+		if ((int)order != buddy->order)
 			break;
 
 		remove_from_list(&buddy->chain);
@@ -80,7 +79,7 @@ void free_pages(struct page *pages)
 			idx = bidx;
 		}
 	}
-	pages->order = order;
+	pages->order = (int)order;
 	insert_before(&zone->free_area[order], &pages->chain);
 }
 
@@ -109,7 +108,7 @@ struct page *alloc_pages(unsigned order, unsigned nid, unsigned type)
 		buddy->order = corder;
 		insert_before(&zone->free_area[corder], &buddy->chain);
 	}
-	page->order = order;
+	page->order = -1;
 
 	return page;
 }
