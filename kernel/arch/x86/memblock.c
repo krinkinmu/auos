@@ -1,8 +1,8 @@
 #include <kernel/kernel.h>
 #include <kernel/debug.h>
 #include <kernel/utility.h>
+#include <arch/memory.h>
 
-#include "memory.h"
 #include "memblock.h"
 
 #define MEMBLOCK_REGIONS 128
@@ -147,12 +147,12 @@ static unsigned long memblock_find_in_range(unsigned long size,
 		unsigned long long addr = mem->regions[i].addr;
 		unsigned long long end = addr + mem->regions[i].size;
 
-		addr = max(addr, from);
-		end = min(end, to);
+		addr = maxull(addr, from);
+		end = minull(end, to);
 
 		while (addr < end) {
 			/* Align addr on requested border. */
-			addr = ALIGN_UP(addr, (unsigned long long)align);
+			addr = alignull_up(addr, align);
 
 			/* Has the region got enough space? */
 			if (addr + size > end)
@@ -209,28 +209,4 @@ int memblock_is_free(unsigned long addr, unsigned long size)
 	unsigned long long end = (unsigned long long)addr + size;
 
 	return memblock_find_in_range(size, 1, addr, end) != 0;
-}
-
-static void memblock_list_regions(const struct memblock_type *type)
-{
-	for (unsigned i = 0; i != type->size; ++i) {
-		unsigned long addr = type->regions[i].addr;
-		unsigned long end = addr + type->regions[i].size;
-
-		debug("region 0x%x-0x%x\n", addr, end);
-	}
-}
-
-void memblock_list_reserved(void)
-{
-	struct memblock_type *res = &memblock.reserved;
-
-	memblock_list_regions(res);
-}
-
-void memblock_list_memory(void)
-{
-	struct memblock_type *mem = &memblock.memory;
-
-	memblock_list_regions(mem);
 }

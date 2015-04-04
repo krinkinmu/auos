@@ -2,7 +2,7 @@
 
 #include <kernel/utility.h>
 #include <kernel/io.h>
-#include "memory.h"
+#include <arch/memory.h>
 
 static const unsigned ROWS = 24;
 static const unsigned COLS = 80;
@@ -14,6 +14,14 @@ static unsigned col;
 
 static void newline(void)
 {
+	const unsigned shift = (col + row * COLS) * 2;
+
+	for (unsigned i = 0; i != COLS - col; ++i) {
+		*(VMEM + shift + i) = 0;
+		*(VMEM + shift + i + 1) = ATTR;
+	}
+		
+
 	col = 0;
 	row = (row + 1) % ROWS;
 }

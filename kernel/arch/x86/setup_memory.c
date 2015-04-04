@@ -1,8 +1,8 @@
 #include <kernel/utility.h>
 #include <kernel/debug.h>
+#include <arch/memory.h>
+#include <arch/cpu.h>
 
-#include "memory.h"
-#include "cpu.h"
 #include "memblock.h"
 #include "multiboot.h"
 

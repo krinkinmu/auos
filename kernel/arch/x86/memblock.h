@@ -23,7 +23,5 @@ unsigned long memblock_alloc_range(unsigned long size, unsigned align,
 				unsigned long long from,
 				unsigned long long to);
 int memblock_is_free(unsigned long addr, unsigned long size);
-void memblock_list_reserved(void);
-void memblock_list_memory(void);
 
 #endif /*__MEMBLOCK_H__*/
