@@ -2,17 +2,24 @@
 #define __PAGE_ALLOC_H__
 
 #include <kernel/list.h>
+#include <kernel/kernel.h>
+#include <arch/memory.h>
 
 #define MAX_ORDER       11
 #define MAX_ORDER_PAGES (1 << (MAX_ORDER - 1))
 #define ZONE_TYPES      2
 
+#define ALLOC_HIGH      BITUL(1)
+#define ALLOC_NORMAL    BITUL(2)
+
 struct zone;
 struct page_list_data;
+struct slab;
 
 struct page {
 	struct list_head chain;
 	struct zone *zone;
+	struct slab *slab;
 	int order;
 };
 
@@ -51,19 +58,27 @@ static inline unsigned long buddy_index(unsigned long idx, unsigned order)
 	return idx ^ (1 << order);
 }
 
-static inline unsigned long page_to_pfn(const struct page_list_data *node,
-                        const struct page *page)
+static inline unsigned long page_to_pfn(const struct page *page)
 {
-	return page - node->pages;
+	return page - nodes[0].pages;
 }
 
-static inline struct page *pfn_to_page(struct page_list_data *node,
-                        unsigned long idx)
+static inline struct page *pfn_to_page(unsigned long idx)
 {
-	return node->pages + idx;
+	return nodes[0].pages + idx;
 }
 
-struct page *alloc_pages(unsigned order, unsigned node, unsigned zone);
+static inline unsigned long page_physical_address(const struct page *page)
+{
+	return page_to_pfn(page) << PAGE_SHIFT;
+}
+
+static inline void *page_virtual_address(const struct page *page)
+{
+	return virt_addr(page_physical_address(page));
+}
+
+struct page *alloc_pages(unsigned order, unsigned flags);
 void free_pages(struct page *pages, unsigned order);
 
 #endif /*__PAGE_ALLOC_H__*/

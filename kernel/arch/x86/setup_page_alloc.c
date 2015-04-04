@@ -17,7 +17,7 @@ static void init_zone(struct page_list_data *node, struct zone *zone,
 		list_init_head(&zone->free_area[i]);
 
 	for (unsigned long pfn = start_pfn; pfn != end_pfn; ++pfn) {
-		struct page *page = pfn_to_page(node, pfn - start_pfn);
+		struct page *page = pfn_to_page(pfn - start_pfn);
 
 		list_init_head(&page->chain);
 		page->zone = zone;
@@ -27,7 +27,7 @@ static void init_zone(struct page_list_data *node, struct zone *zone,
 	unsigned long free = 0;
 	for (unsigned long pfn = start_pfn; pfn != end_pfn; ++pfn) {
 		if (memblock_is_free(pfn << PAGE_SHIFT, PAGE_SIZE)) {
-			free_pages(pfn_to_page(node, pfn - start_pfn), 0);
+			free_pages(pfn_to_page(pfn - start_pfn), 0);
 			++free;
 		}
 	}
@@ -47,8 +47,8 @@ static void init_node(struct page_list_data *node, unsigned long *max_pfns)
 	unsigned long size = (end_pfn - start_pfn) * sizeof(struct page);
 	unsigned long paddr = memblock_alloc_range(size, PAGE_SIZE, PAGE_SIZE,
 					low_mem_page_frames << PAGE_SHIFT);
-	if (!paddr)
-		panic("Cannot allocate struct page array of size %u\n", size);
+
+	assert(paddr, "Cannot allocate struct page array\n");
 
 	node->pages = virt_addr(paddr);
 	for (unsigned i = 0; i != ZONE_TYPES; ++i) {
