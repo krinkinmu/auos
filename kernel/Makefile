@@ -3,7 +3,7 @@ ARCH        ?= x86
 CWD         := $(CURDIR)
 KERN_DIR    := $(CWD)
 ARCH_DIR    := $(KERN_DIR)/arch/$(ARCH)
-INCLUDES    := -I$(KERN_DIR)/include
+INCLUDES    := -I$(KERN_DIR)/include -I$(KERN_DIR)/include/$(ARCH)
 BASE_LFLAGS := -nostdlib -nostdinc
 BASE_CFLAGS := -Wall -Wextra -Werror -std=c11 -pedantic \
                -ffreestanding -m32 -g -O2 $(INCLUDES)
