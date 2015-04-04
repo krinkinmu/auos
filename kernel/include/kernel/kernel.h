@@ -5,9 +5,38 @@
 
 #include <stddef.h>
 
-#define ALIGN_MASK(x, mask) (((x) + (mask)) & ~(mask))
-#define ALIGN_UP(x, a)      ALIGN_MASK(x, ((a) - 1))
-#define ALIGN_DOWN(x, a)    ((x) & ~((a) - 1))
+static inline unsigned long alignul_mask(unsigned long x, unsigned long m)
+{
+	return (x + m) & ~m;
+}
+
+static inline unsigned long long alignull_mask(unsigned long long x,
+			unsigned long long m)
+{
+	return (x + m) & ~m;
+}
+
+static inline unsigned long alignul_up(unsigned long x, unsigned long a)
+{
+	return alignul_mask(x, a - 1);
+}
+
+static inline unsigned long long alignull_up(unsigned long long x,
+			unsigned long long a)
+{
+	return alignull_mask(x, a - 1);
+}
+
+static inline unsigned long alignul_down(unsigned long x, unsigned long a)
+{
+	return x & ~(a - 1);
+}
+
+static inline unsigned long long alignull_down(unsigned long long x,
+			unsigned long long a)
+{
+	return x & ~(a - 1);
+}
 
 #define container_of(ptr, type, member) \
         ((type *)((char *)(ptr) - offsetof(type, member)))
@@ -75,15 +104,6 @@ static inline int maxi(int x, int y)
 {
 	return x > y ? x : y;
 }
-
-
-#define typed(name, expr) _Generic((expr), \
-	unsigned long long: name ## ull, long long: name ## ll, \
-	unsigned long: name ## ul, long: name ## l, \
-	unsigned: name ## u, default: name ## i)
-
-#define min(x, y) typed(min, 0 ? (x) : (y)) ((x), (y))
-#define max(x, y) typed(max, 0 ? (x) : (y)) ((x), (y))
 
 #endif
 
