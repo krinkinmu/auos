@@ -18,4 +18,8 @@
 		while (1);           \
 	} while (0)
 
+#define assert(expr, msg)            \
+        if (!(expr))                 \
+		panic(msg);
+
 #endif /*__DEBUG_H__*/
