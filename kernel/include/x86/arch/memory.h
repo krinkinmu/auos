@@ -1,5 +1,5 @@
-#ifndef __MEMORY_H__
-#define __MEMORY_H__
+#ifndef __X86_ARCH_MEMORY_H__
+#define __X86_ARCH_MEMORY_H__
 
 #define PHYS_MEM_MAX     0xFFFFFFFF
 #define PAGE_OFFSET      0xC0000000
@@ -37,6 +37,7 @@ extern unsigned long page_frames, low_mem_page_frames;
 
 struct multiboot_info;
 void setup_memory(struct multiboot_info *mbi);
+void setup_page_alloc(void);
 
 static inline void load_cr3(unsigned long pde)
 { __asm__ ("movl %0, %%cr3" : : "a"(pde)); }
@@ -54,4 +55,4 @@ static inline pde_t page_dir_entry(pte_t *ptr, unsigned long flags)
 }
 #endif /* ASM_FILE */
 
-#endif /*__MEMORY_H__*/
+#endif /*__X86_ARCH_MEMORY_H__*/

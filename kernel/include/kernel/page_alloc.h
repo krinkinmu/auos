@@ -1,5 +1,5 @@
-#ifndef __PAGE_ALLOC_H__
-#define __PAGE_ALLOC_H__
+#ifndef __KERNEL_PAGE_ALLOC_H__
+#define __KERNEL_PAGE_ALLOC_H__
 
 #include <kernel/list.h>
 #include <kernel/kernel.h>
@@ -81,4 +81,4 @@ static inline void *page_virtual_address(const struct page *page)
 struct page *alloc_pages(unsigned order, unsigned flags);
 void free_pages(struct page *pages, unsigned order);
 
-#endif /*__PAGE_ALLOC_H__*/
+#endif /*__KERNEL_PAGE_ALLOC_H__*/

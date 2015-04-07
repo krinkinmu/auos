@@ -1,5 +1,5 @@
-#ifndef __LIST_H__
-#define __LIST_H__
+#ifndef __KERNEL_LIST_H__
+#define __KERNEL_LIST_H__
 
 struct list_head {
 	struct list_head *next;
@@ -16,4 +16,4 @@ static inline int list_empty(const struct list_head *head)
 	return head->next == head;
 }
 
-#endif /*__LIST_H__*/
+#endif /*__KERNEL_LIST_H__*/

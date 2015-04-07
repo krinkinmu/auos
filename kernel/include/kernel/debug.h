@@ -1,5 +1,5 @@
-#ifndef __DEBUG_H__
-#define __DEBUG_H__
+#ifndef __KERNEL_DEBUG_H__
+#define __KERNEL_DEBUG_H__
 
 #include <kernel/io.h>
 
@@ -18,8 +18,12 @@
 		while (1);           \
 	} while (0)
 
+#define warn_if(expr, ...)           \
+	if (expr)                    \
+		printf(__VA_ARGS__)
+
 #define assert(expr, msg)            \
         if (!(expr))                 \
-		panic(msg);
+		panic(msg)
 
-#endif /*__DEBUG_H__*/
+#endif /*__KERNEL_DEBUG_H__*/

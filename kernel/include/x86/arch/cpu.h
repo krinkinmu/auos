@@ -1,5 +1,5 @@
-#ifndef __CPU_H__
-#define __CPU_H__
+#ifndef __X86_ARCH_CPU_H__
+#define __x86_ARCH_CPU_H__
 
 #include <kernel/kernel.h>
 
@@ -28,4 +28,4 @@
 #define X86_PDE_ACCESSED  BITUL(5)
 #define X86_PDE_LARGE     BITUL(7)
 
-#endif /*__CPU_H__*/
+#endif /*__X86_ARCH_CPU_H__*/

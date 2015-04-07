@@ -1,5 +1,5 @@
-#ifndef __SLAB_CACHE_H__
-#define __SLAB_CACHE_H__
+#ifndef __KERNEL_SLAB_CACHE_H__
+#define __KERNEL_SLAB_CACHE_H__
 
 #include <kernel/page_alloc.h>
 #include <kernel/list.h>
@@ -32,4 +32,4 @@ void slab_cache_destroy(struct slab_cache *cache);
 void *slab_cache_alloc(struct slab_cache *cache, unsigned flags);
 void slab_cache_free(struct slab_cache *cache, void *ptr);
 
-#endif /*__SLAB_CACHE_H__*/
+#endif /*__KERNEL_SLAB_CACHE_H__*/

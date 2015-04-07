@@ -1,5 +1,5 @@
-#ifndef __KERNEL_H__
-#define __KERNEL_H__
+#ifndef __KERNEL_KERNEL_H__
+#define __KERNEL_KERNEL_H__
 
 #ifndef ASM_FILE
 
@@ -116,4 +116,4 @@ static inline int maxi(int x, int y)
 #define BITUL(x)         (_AC(1,UL) << (x))
 #define BITULL(x)        (_AC(1,ULL) << (x))
 
-#endif /*__KERNEL_H__*/
+#endif /*__KERNEL_KERNEL_H__*/
