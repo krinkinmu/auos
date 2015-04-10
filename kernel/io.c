@@ -1,45 +1,22 @@
-#include <stdarg.h>
-
 #include <kernel/utility.h>
+#include <kernel/console.h>
+#include <kernel/kernel.h>
 #include <kernel/io.h>
-#include <arch/memory.h>
 
-static const unsigned ROWS = 24;
-static const unsigned COLS = 80;
-static const char ATTR = 7;
-static char * const VMEM = (char *)(PAGE_OFFSET + 0xB8000);
-
-static unsigned row;
-static unsigned col;
-
-static void newline(void)
-{
-	const unsigned shift = (col + row * COLS) * 2;
-
-	for (unsigned i = 0; i != COLS - col; ++i) {
-		*(VMEM + shift + i) = 0;
-		*(VMEM + shift + i + 1) = ATTR;
-	}
-		
-
-	col = 0;
-	row = (row + 1) % ROWS;
-}
+#include <stdarg.h>
 
 void putchar(int c)
 {
-	const unsigned shift = (col + row * COLS) * 2;
+	struct list_head *it = consoles.next;
+	const char ch = c;
 
-	if (c == '\n') {
-		newline();
-		return;
+	while (it != &consoles) {
+		const struct console *const console =
+					container_of(it, struct console, link);
+
+		console->write(&ch, 1);
+		it = it->next;
 	}
-
-	*(VMEM + shift) = c & 0xFF;
-	*(VMEM + shift + 1) = ATTR;
-
-	if (++col == COLS)
-		newline();
 }
 
 static void puts_no_newline(const char *asciz)
@@ -87,10 +64,4 @@ void printf(const char *fmt, ...)
 	}
 
 	va_end(vararg_lst);
-}
-
-void init_io()
-{
-	/* fill video memory with zeroes */
-	memset(VMEM, 0, ROWS * COLS * 2);
 }
