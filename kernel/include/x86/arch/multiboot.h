@@ -1,5 +1,5 @@
-#ifndef __ARCH_X86_MULTIBOOT_H__
-#define __ARCH_X86_MULTIBOOT_H__
+#ifndef __X86_ARCH_MULTIBOOT_H__
+#define __X86_ARCH_MULTIBOOT_H__
 
 #include <inttypes.h>
 
@@ -50,4 +50,4 @@ struct multiboot_mmap_entry
 	uint32_t type;
 } __attribute__((packed));
 
-#endif /*__ARCH_X86_MULTIBOOT_H__*/
+#endif /*__X86_ARCH_MULTIBOOT_H__*/

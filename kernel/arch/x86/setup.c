@@ -1,7 +1,6 @@
 #include <arch/memory.h>
-
-#include "multiboot.h"
-#include "early_console.h"
+#include <arch/multiboot.h>
+#include <arch/early_console.h>
 
 void setup_arch(void *bootstrap)
 {

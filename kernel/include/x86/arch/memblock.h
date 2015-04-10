@@ -1,5 +1,5 @@
-#ifndef __MEMBLOCK_H__
-#define __MEMBLOCK_H__
+#ifndef __X86_ARCH_MEMBLOCK_H__
+#define __X86_ARCH_MEMBLOCK_H__
 
 struct memblock_region {
 	unsigned long long addr;
@@ -24,4 +24,4 @@ unsigned long memblock_alloc_range(unsigned long size, unsigned align,
 				unsigned long long to);
 int memblock_is_free(unsigned long addr, unsigned long size);
 
-#endif /*__MEMBLOCK_H__*/
+#endif /*__X86_ARCH_MEMBLOCK_H__*/

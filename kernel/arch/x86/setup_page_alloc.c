@@ -1,9 +1,8 @@
 #include <kernel/page_alloc.h>
 #include <kernel/kernel.h>
 #include <kernel/debug.h>
-
-#include "memory.h"
-#include "memblock.h"
+#include <arch/memory.h>
+#include <arch/memblock.h>
 
 struct page_list_data nodes[1];
 

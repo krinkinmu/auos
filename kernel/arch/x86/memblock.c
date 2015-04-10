@@ -2,8 +2,7 @@
 #include <kernel/debug.h>
 #include <kernel/utility.h>
 #include <arch/memory.h>
-
-#include "memblock.h"
+#include <arch/memblock.h>
 
 #define MEMBLOCK_REGIONS 128
 

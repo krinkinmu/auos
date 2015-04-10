@@ -3,9 +3,8 @@
 #include <arch/descriptor_table.h>
 #include <arch/memory.h>
 #include <arch/cpu.h>
-
-#include "memblock.h"
-#include "multiboot.h"
+#include <arch/memblock.h>
+#include <arch/multiboot.h>
 
 unsigned long page_frames;
 unsigned long low_mem_page_frames;
