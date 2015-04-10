@@ -1,5 +1,5 @@
 #ifndef __KERNEL_UTILITY_H__
-#define __KENREL_UTILITY_H__
+#define __KERNEL_UTILITY_H__
 
 void *memset(void *ptr, int value, unsigned long size);
 void *memcpy(void *ptr, const void *src, unsigned long size);
