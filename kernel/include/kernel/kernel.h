@@ -113,6 +113,7 @@ static inline int maxi(int x, int y)
 #	define _AC(X, Y) (X##Y)
 #endif
 
+#define BITU(x)          (_AC(1,U) << (x))
 #define BITUL(x)         (_AC(1,UL) << (x))
 #define BITULL(x)        (_AC(1,ULL) << (x))
 
