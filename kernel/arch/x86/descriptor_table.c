@@ -11,6 +11,7 @@ void init_entry(struct descriptor_table_entry *entry, uint32_t limit,
 				(((uint64_t)base & 0x00FFFFFFul) << 16) |
 				(((uint64_t)base & 0xFF000000ul) << 32) |
 				(((uint64_t)type & 0xF0FFul) << 40);
+
 	entry->data = descr;
 }
 

@@ -7,7 +7,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define SEGTYPE     BITU(0)
+#define SEGTYPE     BITU(4)
 #define READABLE    BITU(1)
 #define WRITEABLE   BITU(1)
 #define EXECUTABLE  BITU(3)
