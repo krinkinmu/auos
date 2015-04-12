@@ -1,22 +1,25 @@
 #include <arch/descriptor_table.h>
 
-void init_entry(struct descriptor_table_entry *entry, unsigned long long limit,
-			unsigned long long base, unsigned long long type)
+void init_entry(struct descriptor_table_entry *entry, uint32_t limit,
+			uint32_t base, unsigned type)
 {
-	warn_if(limit > 0xFFFFFULL, "Limit overflow\n");
-	warn_if(base > 0xFFFFFFFFULL, "Base overflow\n");
+	warn_if(limit > 0xFFFFFul, "Limit overflow\n");
+	warn_if(base > 0xFFFFFFFFul, "Base overflow\n");
 
-	entry->data = ((limit & 0xF0000ULL) << 32) | (limit & 0xFFFFULL)
-		| ((base & 0xFFFFFFULL) << 16) | ((base & 0xFF000000ULL) << 32)
-		| type;
+	const uint64_t descr = ((uint64_t)limit & 0x0FFFFul) |
+				(((uint64_t)limit & 0xF0000ul) << 32) |
+				(((uint64_t)base & 0x00FFFFFFul) << 16) |
+				(((uint64_t)base & 0xFF000000ul) << 32) |
+				(((uint64_t)type & 0xF0FFul) << 40);
+	entry->data = descr;
 }
 
 void init_descriptor_ptr(struct descriptor_ptr *ptr,
 			struct descriptor_table_entry *table,
-			unsigned long entries)
+			size_t entries)
 {
 	ptr->size = sizeof(*table) * entries - 1;
-	ptr->base = (unsigned long)table;
+	ptr->base = (uint32_t)table;
 }
 
 void set_gdt(struct descriptor_ptr *ptr)

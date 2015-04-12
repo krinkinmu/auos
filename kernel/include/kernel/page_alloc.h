@@ -5,6 +5,9 @@
 #include <kernel/kernel.h>
 #include <arch/memory.h>
 
+#include <stddef.h>
+#include <stdint.h>
+
 #define MAX_ORDER       11
 #define MAX_ORDER_PAGES (1 << (MAX_ORDER - 1))
 #define ZONE_TYPES      2
@@ -31,14 +34,14 @@ enum zone_type {
 struct zone {
 	struct page_list_data *node;
 	struct list_head free_area[MAX_ORDER];
-	unsigned long pages;
+	size_t pages;
 };
 
 struct page_list_data {
 	struct zone zones[ZONE_TYPES];
 	struct page *pages;
-	unsigned long start_pfn;
-	unsigned long end_pfn;
+	size_t start_pfn;
+	size_t end_pfn;
 };
 
 extern struct page_list_data nodes[];
@@ -53,24 +56,24 @@ static inline struct page_list_data *zone_node(struct zone *zone)
 	return zone->node;
 }
 
-static inline unsigned long buddy_index(unsigned long idx, unsigned order)
+static inline size_t buddy_index(size_t idx, unsigned order)
 {
 	return idx ^ (1 << order);
 }
 
-static inline unsigned long page_to_pfn(const struct page *page)
+static inline size_t page_to_pfn(const struct page *page)
 {
 	return page - nodes[0].pages;
 }
 
-static inline struct page *pfn_to_page(unsigned long idx)
+static inline struct page *pfn_to_page(size_t idx)
 {
 	return nodes[0].pages + idx;
 }
 
-static inline unsigned long page_physical_address(const struct page *page)
+static inline uintptr_t page_physical_address(const struct page *page)
 {
-	return page_to_pfn(page) << PAGE_SHIFT;
+	return (uintptr_t)page_to_pfn(page) << PAGE_SHIFT;
 }
 
 static inline void *page_virtual_address(const struct page *page)

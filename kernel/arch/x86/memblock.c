@@ -1,6 +1,7 @@
+#include <kernel/utility.h>
 #include <kernel/kernel.h>
 #include <kernel/debug.h>
-#include <kernel/utility.h>
+
 #include <arch/memory.h>
 #include <arch/memblock.h>
 
@@ -10,21 +11,16 @@ static struct memblock_region all_regions[MEMBLOCK_REGIONS];
 static struct memblock_region reserved_regions[MEMBLOCK_REGIONS];
 
 static struct memblock memblock = {
-	.memory.regions    = all_regions,
-	.memory.size       = 0,
-	.memory.capacity   = MEMBLOCK_REGIONS,
-
-	.reserved.regions  = reserved_regions,
-	.reserved.size     = 0,
-	.reserved.capacity = MEMBLOCK_REGIONS,
+	.memory = { all_regions, 0, MEMBLOCK_REGIONS },
+	.reserved = { reserved_regions, 0, MEMBLOCK_REGIONS },
 };
 
 static void memblock_regions_merge(struct memblock_region *dst,
-				const struct memblock_region *src)
+			const struct memblock_region *src)
 {
-	unsigned long long addr = dst->addr;
-	unsigned long long end = addr + dst->size;
-	unsigned long long send = src->addr + src->size;
+	uint64_t addr = dst->addr;
+	uint64_t end = addr + dst->size;
+	uint64_t send = src->addr + src->size;
 
 	if (src->addr < addr)
 		addr = src->addr;
@@ -37,20 +33,19 @@ static void memblock_regions_merge(struct memblock_region *dst,
 }
 
 static int memblock_regions_overlap(const struct memblock_region *lhs,
-				const struct memblock_region *rhs)
+			const struct memblock_region *rhs)
 {
-	unsigned long long laddr = lhs->addr;
-	unsigned long long lend = laddr + lhs->size;
+	uint64_t laddr = lhs->addr;
+	uint64_t lend = laddr + lhs->size;
 
-	unsigned long long raddr = rhs->addr;
-	unsigned long long rend = raddr + rhs->size;
+	uint64_t raddr = rhs->addr;
+	uint64_t rend = raddr + rhs->size;
 
 	return (laddr <= raddr && raddr <= lend) ||
 		(laddr <= rend && rend <= lend);
 }
 
-static void memblock_region_remove(struct memblock_type *type,
-				unsigned i)
+static void memblock_region_remove(struct memblock_type *type, size_t i)
 {
 	for (; i + 1 < type->size; ++i)
 		type->regions[i] = type->regions[i + 1];
@@ -58,24 +53,23 @@ static void memblock_region_remove(struct memblock_type *type,
 }
 
 static int memblock_region_insert(struct memblock_type *type,
-				struct memblock_region *reg, unsigned i)
+			struct memblock_region *reg, size_t i)
 {
 	if (type->size == type->capacity)
 		return -1;
 
-	for (unsigned j = type->size; j > i; --j)
+	for (size_t j = type->size; j > i; --j)
 		type->regions[j] = type->regions[j - 1];
 	type->regions[i] = *reg;
 	++type->size;
 	return 0;
 }
 
-static int memblock_add_range(struct memblock_type *type,
-				unsigned long long addr,
-				unsigned long long size)
+static int memblock_add_range(struct memblock_type *type, uint64_t addr,
+			uint64_t size)
 {
 	struct memblock_region reg = { addr, size };
-	unsigned i;
+	size_t i;
 
 	if (!size)
 		return 0;
@@ -84,7 +78,7 @@ static int memblock_add_range(struct memblock_type *type,
 
 	for (i = 0; i != type->size; ++i) {
 		dst = &type->regions[i];
-		unsigned long long rend = dst->addr + dst->size;
+		uint64_t rend = dst->addr + dst->size;
 
 		if (rend >= addr)
 			break;
@@ -110,9 +104,8 @@ static int memblock_add_range(struct memblock_type *type,
  memory block. Function returns physical address if allocation is
  successful and zero otherwise. Also I suppose that align is power of two.
 */
-static unsigned long memblock_find_in_range(unsigned long size,
-				unsigned align, unsigned long long from,
-				unsigned long long to)
+static uint64_t memblock_find_in_range(size_t size, size_t align,
+			uint64_t from, uint64_t to)
 {
 	struct memblock_type *mem = &memblock.memory;
 	struct memblock_type *res = &memblock.reserved;
@@ -120,10 +113,10 @@ static unsigned long memblock_find_in_range(unsigned long size,
 	/*
 	 j is an index of current region in reserved memory blocks array.
 	*/
-	unsigned j = 0;
+	size_t j = 0;
 
 	/* i iterates over all accessible memory regions. */
-	for (unsigned i = 0; i != mem->size; ++i) {
+	for (size_t i = 0; i != mem->size; ++i) {
 		/*
 		 If end of the current region is less or equal to from, then
 		 it is before the requested memory range, so go to the next.
@@ -143,23 +136,23 @@ static unsigned long memblock_find_in_range(unsigned long size,
 		 addr iterates over address in the current memory region,
 		 and end holds end of the current memory region.
 		*/
-		unsigned long long addr = mem->regions[i].addr;
-		unsigned long long end = addr + mem->regions[i].size;
+		uint64_t addr = mem->regions[i].addr;
+		uint64_t end = addr + mem->regions[i].size;
 
-		addr = maxull(addr, from);
-		end = minull(end, to);
+		addr = maxu(addr, from);
+		end = minu(end, to);
 
 		while (addr < end) {
 			/* Align addr on requested border. */
-			addr = alignull_up(addr, align);
+			addr = align_up(addr, align);
 
 			/* Has the region got enough space? */
 			if (addr + size > end)
 				break;
 
 			/* [raddr, rend) is current reserved region. */
-			unsigned long long raddr = 0;
-			unsigned long long rend = 0;
+			uint64_t raddr = 0;
+			uint64_t rend = 0;
 
 			/* Iterate over reserved regions. */
 			for (; j != res->size; ++j) {
@@ -182,30 +175,32 @@ static unsigned long memblock_find_in_range(unsigned long size,
 	return 0;
 }
 
-int memblock_add(unsigned long long addr, unsigned long long size)
+int memblock_add(uint64_t addr, uint64_t size)
 {
 	return memblock_add_range(&memblock.memory, addr, size);
 }
 
-int memblock_reserve(unsigned long long addr, unsigned long long size)
+int memblock_reserve(uint64_t addr, uint64_t size)
 {
 	return memblock_add_range(&memblock.reserved, addr, size);
 }
 
-unsigned long memblock_alloc_range(unsigned long size, unsigned align,
-				unsigned long long from, unsigned long long to)
+uint64_t memblock_alloc_range(size_t size, size_t align, uint64_t from,
+			uint64_t to)
 {
-	unsigned long addr = memblock_find_in_range(size, align, from, to);
+	const uint64_t addr = memblock_find_in_range(size, align, from, to);
+
 	if (addr && !memblock_reserve(addr, size)) {
-		debug("Allocated region 0x%x-0x%x\n", addr, addr + size - 1);
+		debug("Allocated region 0x%x-0x%x\n", (unsigned int)addr,
+					(unsigned int)(addr + size - 1));
 		memset(virt_addr(addr), 0, size);
 	}
 	return addr;
 }
 
-int memblock_is_free(unsigned long addr, unsigned long size)
+int memblock_is_free(uint64_t addr, uint64_t size)
 {
-	unsigned long long end = (unsigned long long)addr + size;
+	const uint64_t end = addr + size;
 
 	return memblock_find_in_range(size, 1, addr, end) != 0;
 }

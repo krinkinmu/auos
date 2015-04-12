@@ -6,23 +6,22 @@
 #include <arch/memblock.h>
 #include <arch/multiboot.h>
 
-unsigned long page_frames;
-unsigned long low_mem_page_frames;
+size_t page_frames;
+size_t low_mem_page_frames;
 
 static void init_phys_mem_map(struct multiboot_info *mbi)
 {
-	unsigned long long max_phys_addr = 0;
-	unsigned long mmap_entry = mbi->mmap_addr;
-	unsigned long mmap_end = mmap_entry + mbi->mmap_length;
+	uint64_t max_phys_addr = 0;
+	uintptr_t mmap_entry = mbi->mmap_addr;
+	uintptr_t mmap_end = mmap_entry + mbi->mmap_length;
 
 	debug("Physical memory map:\n");
 	while (mmap_entry < mmap_end) {
-		struct multiboot_mmap_entry *entry = (void *)mmap_entry;
-		unsigned long long addr = entry->addr;
-		unsigned long long size = entry->len;
-		unsigned long long last = addr + size - 1;
-		unsigned long type = entry->type;
-
+		const struct multiboot_mmap_entry *entry = (void *)mmap_entry;
+		const uint64_t addr = entry->addr;
+		const uint64_t size = entry->len;
+		const uint64_t last = addr + size - 1;
+		const unsigned type = entry->type;
 
 		if (type == MULTIBOOT_AVAILABLE) {
 			if (last > max_phys_addr)
@@ -61,9 +60,9 @@ static void remap_lower_memory(void)
 
 static void reserve_kernel_memory(void)
 {
-	unsigned long kern_addr = phys_addr(__kernel_begin);
-	unsigned long kern_end = phys_addr(__kernel_end);
-	unsigned long kern_size = kern_end - kern_addr;
+	const uintptr_t kern_addr = phys_addr(__kernel_begin);
+	const uintptr_t kern_end = phys_addr(__kernel_end);
+	const uintptr_t kern_size = kern_end - kern_addr;
 
 	debug("Reserve kernel memory 0x%x-0x%x\n", kern_addr, kern_end - 1);
 	memblock_reserve(kern_addr, kern_size);

@@ -3,107 +3,47 @@
 
 #ifndef ASM_FILE
 
+#include <stdint.h>
 #include <stddef.h>
 
-static inline unsigned long alignul_mask(unsigned long x, unsigned long m)
+static inline uintptr_t align_mask(uintptr_t x, uintptr_t m)
 {
 	return (x + m) & ~m;
 }
 
-static inline unsigned long long alignull_mask(unsigned long long x,
-			unsigned long long m)
+static inline uintptr_t align_up(uintptr_t x, uintptr_t a)
 {
-	return (x + m) & ~m;
+	return align_mask(x, a - 1);
 }
 
-static inline unsigned long alignul_up(unsigned long x, unsigned long a)
-{
-	return alignul_mask(x, a - 1);
-}
-
-static inline unsigned long long alignull_up(unsigned long long x,
-			unsigned long long a)
-{
-	return alignull_mask(x, a - 1);
-}
-
-static inline unsigned long alignul_down(unsigned long x, unsigned long a)
+static inline uintptr_t align_down(uintptr_t x, uintptr_t a)
 {
 	return x & ~(a - 1);
 }
 
-static inline unsigned long long alignull_down(unsigned long long x,
-			unsigned long long a)
+static inline uintmax_t minu(uintmax_t x, uintmax_t y)
 {
-	return x & ~(a - 1);
+	return x < y ? x : y;
 }
+
+static inline intmax_t min(intmax_t x, intmax_t y)
+{
+	return x < y ? x : y;
+}
+
+static inline uintmax_t maxu(uintmax_t x, uintmax_t y)
+{
+	return x > y ? x : y;
+}
+
+static inline intmax_t maxl(intptr_t x, intmax_t y)
+{
+	return x > y ? x : y;
+}
+
 
 #define container_of(ptr, type, member) \
         ((type *)((char *)(ptr) - offsetof(type, member)))
-
-
-static inline unsigned long long minull(unsigned long long x,
-			unsigned long long y)
-{
-	return x < y ? x : y;
-}
-
-static inline long long minll(long long x, long long y)
-{
-	return x < y ? x : y;
-}
-
-static inline unsigned long minul(unsigned long x, unsigned long y)
-{
-	return x < y ? x : y;
-}
-
-static inline long minl(long x, long y)
-{
-	return x < y ? x : y;
-}
-
-static inline unsigned minu(unsigned x, unsigned y)
-{
-	return x < y ? x : y;
-}
-
-static inline int mini(int x, int y)
-{
-	return x < y ? x : y;
-}
-
-
-static inline unsigned long long maxull(unsigned long long x,
-			unsigned long long y)
-{
-	return x > y ? x : y;
-}
-
-static inline long long maxll(long long x, long long y)
-{
-	return x > y ? x : y;
-}
-
-static inline unsigned long maxul(unsigned long x, unsigned long y)
-{
-	return x > y ? x : y;
-}
-
-static inline long maxl(long x, long y)
-{
-	return x > y ? x : y;
-}
-
-static inline unsigned maxu(unsigned x, unsigned y)
-{
-	return x > y ? x : y;
-}
-
-static inline int maxi(int x, int y)
-{
-	return x > y ? x : y;
-}
 
 #endif
 

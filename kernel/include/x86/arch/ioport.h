@@ -1,11 +1,13 @@
 #ifndef __X86_ARCH_IOPORT_H__
 #define __X86_ARCH_IOPORT_H__
 
-void outb(unsigned short port, unsigned char b);
-unsigned char inb(unsigned short port);
-void outw(unsigned short port, unsigned short w);
-unsigned short inw(unsigned short port);
-void outl(unsigned short port, unsigned long l);
-unsigned long inl(unsigned short port);
+#include <stdint.h>
+
+void out8(uint16_t port, uint8_t b);
+uint8_t in8(uint16_t port);
+void out16(uint16_t port, uint16_t w);
+uint16_t in16(uint16_t port);
+void out32(uint16_t port, uint32_t l);
+uint32_t in32(uint16_t port);
 
 #endif /*__X86_ARCH_IOPORT_H__*/

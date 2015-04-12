@@ -3,9 +3,11 @@
 
 #include <kernel/list.h>
 
+#include <stddef.h>
+
 struct console {
 	struct list_head link;
-	void (*write)(const char *data, unsigned long size);
+	void (*write)(const char *data, size_t size);
 };
 
 extern struct list_head consoles;

@@ -1,6 +1,6 @@
 #include <kernel/utility.h>
 
-void * memset(void *ptr, int value, unsigned long size)
+void * memset(void *ptr, int value, size_t size)
 {
 	const char *end = (char *)ptr + size;
 
@@ -10,7 +10,7 @@ void * memset(void *ptr, int value, unsigned long size)
 	return ptr;
 }
 
-void * memcpy(void *dst, const void *src, unsigned long size)
+void * memcpy(void *dst, const void *src, size_t size)
 {
 	const char *from = src;
 
@@ -19,7 +19,7 @@ void * memcpy(void *dst, const void *src, unsigned long size)
 	return dst;
 }
 
-void ultoa(char *buf, unsigned long d, int base)
+void utoa(char *buf, uintptr_t d, unsigned base)
 {
 	char *begin = buf;
 	char *end = buf;
@@ -37,13 +37,13 @@ void ultoa(char *buf, unsigned long d, int base)
 	}
 }
 
-void ltoa(char *buf, long d, int base)
+void itoa(char *buf, intptr_t d, unsigned base)
 {
-	unsigned long n = d;
+	uintptr_t n = d;
 
 	if (base == 10 && d < 0) {
 		*buf++ = '-';
-		n = (unsigned long)(-d);
+		n = (uintptr_t)(-d);
 	}
-	ultoa(buf, n, base);
+	utoa(buf, n, base);
 }

@@ -48,11 +48,11 @@ void printf(const char *fmt, ...)
 		c = *fmt++;
 		if (c == 'u' || c == 'x') {
 			unsigned value = va_arg(vararg_lst, unsigned);
-			ultoa(buffer, value, (c == 'x' ? 16 : 10));
+			utoa(buffer, value, (c == 'x' ? 16 : 10));
 			puts_no_newline(buffer);
 		} else if (c == 'd') {
 			int value = va_arg(vararg_lst, int);
-			ltoa(buffer, value, (c == 'x' ? 16 : 10));
+			itoa(buffer, value, (c == 'x' ? 16 : 10));
 			puts_no_newline(buffer);
 		} else if (c == 's') {
 			puts_no_newline(va_arg(vararg_lst, const char *));

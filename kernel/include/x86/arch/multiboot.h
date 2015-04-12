@@ -1,7 +1,7 @@
 #ifndef __X86_ARCH_MULTIBOOT_H__
 #define __X86_ARCH_MULTIBOOT_H__
 
-#include <inttypes.h>
+#include <stdint.h>
 
 #define MULTIBOOT_AVAILABLE 1
 

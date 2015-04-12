@@ -19,13 +19,13 @@
 
 static void putchar(char c)
 {
-	while (!(inb(REG_LSR) & LSR_TX_READY));
-	outb(REG_DATA, c);
+	while (!(in8(REG_LSR) & LSR_TX_READY));
+	out8(REG_DATA, c);
 }
 
-static void write(const char *buf, unsigned long size)
+static void write(const char *buf, size_t size)
 {
-	for (unsigned i = 0; i != size; ++i)
+	for (size_t i = 0; i != size; ++i)
 		putchar(buf[i]);
 }
 
@@ -36,16 +36,16 @@ static struct console serial_console = {
 static void init_polling_mode(void)
 {
 	/* disable all interrupts */
-	outb(REG_IER, 0);
+	out8(REG_IER, 0);
 	/* enable access to frequency divisor */
-	outb(REG_LCR, LCR_DLAB);
+	out8(REG_LCR, LCR_DLAB);
 	/* set 9600 baud rate (timer frequency is 115200, divide it by 12) */
-	outb(REG_DLL, 0x0C);
-	outb(REG_DLH, 0x00);
+	out8(REG_DLL, 0x0C);
+	out8(REG_DLH, 0x00);
 	/* set frame format (8 bit, no parity, 1 stop bit) and drop DLAB */
-	outb(REG_LCR, LCR_8BIT);
+	out8(REG_LCR, LCR_8BIT);
 	/* enable 14 byte length FIFO buffer */
-	outb(REG_FCR, FCR_EFIFO | FCR_14BYTES);
+	out8(REG_FCR, FCR_EFIFO | FCR_14BYTES);
 }
 
 void init_serial_console(void)

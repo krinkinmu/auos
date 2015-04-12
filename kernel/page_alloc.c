@@ -4,10 +4,10 @@
 
 static void __free_pages_node(struct page *pages, int order, struct zone *zone)
 {
-	unsigned long idx = page_to_pfn(pages);
+	size_t idx = page_to_pfn(pages);
 
 	while (order < MAX_ORDER - 1) {
-		const unsigned long bidx = buddy_index(idx, order);
+		const size_t bidx = buddy_index(idx, order);
 
 		if (bidx >= zone->pages)
 			break;
@@ -57,8 +57,8 @@ static struct page *__alloc_pages_node(int order, struct zone *zone)
 
 	list_remove(&page->chain);
 	while (corder > order) {
-		const unsigned long idx = page_to_pfn(page);
-		const unsigned long bidx = buddy_index(idx, --corder);
+		const size_t idx = page_to_pfn(page);
+		const size_t bidx = buddy_index(idx, --corder);
 		struct page *const buddy = pfn_to_page(bidx);
 
 		buddy->order = corder;

@@ -2,8 +2,7 @@
 #include <kernel/kernel.h>
 #include <kernel/debug.h>
 
-void slab_cache_create(struct slab_cache *cache, unsigned long size,
-			unsigned align)
+void slab_cache_create(struct slab_cache *cache, size_t size, size_t align)
 {
 	list_init_head(&cache->partial);
 	list_init_head(&cache->full);
@@ -11,7 +10,7 @@ void slab_cache_create(struct slab_cache *cache, unsigned long size,
 	if (size < sizeof(struct slab_place))
 		size = sizeof(struct slab_place);
 
-	cache->object_size = alignul_up(size, align);
+	cache->object_size = align_up(size, align);
 	cache->object_alignment = align;
 }
 
@@ -33,11 +32,11 @@ void slab_cache_destroy(struct slab_cache *cache)
 static void slab_init(struct slab_cache *cache, struct slab *slab,
 			char *begin, char *end)
 {
-	const unsigned align = cache->object_alignment;
-	const unsigned long size = cache->object_size;
+	const size_t align = cache->object_alignment;
+	const size_t size = cache->object_size;
 
-	begin = (char *)alignul_up((unsigned long)begin, align);
-	end = (char *)alignul_down((unsigned long)end, align);
+	begin = (char *)align_up((uintptr_t)begin, align);
+	end = (char *)align_down((uintptr_t)end, align);
 
 	assert(begin + size <= end, "Slab size too small\n");
 

@@ -2,23 +2,22 @@
 #include <kernel/utility.h>
 #include <arch/memory.h>
 
-static const unsigned ROWS = 24;
-static const unsigned COLS = 80;
+static const size_t ROWS = 24;
+static const size_t COLS = 80;
 static const char ATTR = 7;
 static char *const VMEM = (char *)(PAGE_OFFSET + 0xB8000);
 
-static unsigned row;
-static unsigned col;
+static size_t row;
+static size_t col;
 
 static void newline(void)
 {
-	const unsigned shift = (col + row * COLS) * 2;
+	const size_t shift = (col + row * COLS) * 2;
 
-	for (unsigned i = 0; i != COLS - col; ++i) {
+	for (size_t i = 0; i != COLS - col; ++i) {
 		*(VMEM + shift + i) = 0;
 		*(VMEM + shift + i + 1) = ATTR;
 	}
-		
 
 	col = 0;
 	row = (row + 1) % ROWS;
@@ -26,7 +25,7 @@ static void newline(void)
 
 static void putchar(char c)
 {
-	const unsigned shift = (col + row * COLS) * 2;
+	const size_t shift = (col + row * COLS) * 2;
 
 	if (c == '\n') {
 		newline();
@@ -40,9 +39,9 @@ static void putchar(char c)
 		newline();
 }
 
-static void write(const char *buf, unsigned long size)
+static void write(const char *buf, size_t size)
 {
-	for (unsigned long i = 0; i != size; ++i)
+	for (size_t i = 0; i != size; ++i)
 		putchar(buf[i]);
 }
 
