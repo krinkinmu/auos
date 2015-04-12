@@ -7,4 +7,5 @@ ARCH_C_SOURCES   := \
 	setup_memory.c \
 	setup_page_alloc.c \
 	descriptor_table.c \
+	acpi.c \
 	ioport.c
