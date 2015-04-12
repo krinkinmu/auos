@@ -19,6 +19,18 @@ void * memcpy(void *dst, const void *src, size_t size)
 	return dst;
 }
 
+int memcmp(const void *lptr, const void *rptr, size_t size)
+{
+	const char *l = lptr;
+	const char *e = l + size;
+
+	for (const char *r = rptr; l < e; ++l, ++r)
+		if (*l != *r)
+			return *l - *r;
+
+	return 0;
+}
+
 void utoa(char *buf, uintptr_t d, unsigned base)
 {
 	char *begin = buf;
