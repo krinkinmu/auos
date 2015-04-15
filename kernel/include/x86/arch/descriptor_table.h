@@ -2,7 +2,6 @@
 #define __X86_ARCH_DESCRIPTOR_TABLE_H__
 
 #include <kernel/kernel.h>
-#include <kernel/debug.h>
 
 #include <stddef.h>
 #include <stdint.h>

@@ -1,3 +1,4 @@
+#include <kernel/debug.h>
 #include <arch/descriptor_table.h>
 
 void init_entry(struct descriptor_table_entry *entry, uint32_t limit,

@@ -1,7 +1,7 @@
-#ifndef __X86_ARCH_CPU_H__
-#define __X86_ARCH_CPU_H__
+#ifndef __X86_ARCH_ASM_CPU_H__
+#define __X86_ARCH_ASM_CPU_H__
 
-#include <kernel/kernel.h>
+#include <kernel/asm/kernel.h>
 
 #define X86_CR0_PE	BITUL(0)
 #define X86_CR0_MP	BITUL(1)
@@ -28,4 +28,4 @@
 #define X86_PDE_ACCESSED  BITUL(5)
 #define X86_PDE_LARGE     BITUL(7)
 
-#endif /*__X86_ARCH_CPU_H__*/
+#endif /*__X86_ARCH_ASM_CPU_H__*/

@@ -1,16 +1,7 @@
 #ifndef __X86_ARCH_MEMORY_H__
 #define __X86_ARCH_MEMORY_H__
 
-#define PHYS_MEM_MAX     0xFFFFFFFF
-#define PAGE_OFFSET      0xC0000000
-#define PAGE_SHIFT       12
-#define PAGE_SIZE        (1 << PAGE_SHIFT)
-#define PGDIR_SHIFT      22
-#define PGDIR_SIZE       (1 << PGDIR_SHIFT)
-#define PTRS_PER_PT      1024
-#define PTRS_PER_PGD     1024
-
-#ifndef ASM_FILE
+#include <arch/asm/memory.h>
 
 #include <stdint.h>
 #include <stddef.h>
@@ -57,7 +48,5 @@ static inline pde_t page_dir_entry(pte_t *ptr, uint32_t flags)
 	pde_t pde = { phys_addr(ptr) | (flags & (PAGE_SIZE - 1)) };
 	return pde;
 }
-
-#endif /* ASM_FILE */
 
 #endif /*__X86_ARCH_MEMORY_H__*/

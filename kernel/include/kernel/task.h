@@ -4,8 +4,8 @@
 #include <kernel/kernel.h>
 #include <kernel/list.h>
 
-#include <arch/memory.h>
 #include <arch/task_state.h>
+#include <arch/memory.h>
 
 typedef int tid_t;
 
