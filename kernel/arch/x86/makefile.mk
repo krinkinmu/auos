@@ -6,7 +6,7 @@ ARCH_C_SOURCES   := \
 	memblock.c \
 	setup_memory.c \
 	setup_page_alloc.c \
-	descriptor_table.c \
+	gdt.c \
+	idt.c \
 	acpi.c \
-	ioport.c \
-	task.c
+	ioport.c
