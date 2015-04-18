@@ -1,7 +1,6 @@
 #include <kernel/utility.h>
 #include <kernel/debug.h>
 #include <arch/asm/cpu.h>
-#include <arch/descriptor_table.h>
 #include <arch/memory.h>
 #include <arch/memblock.h>
 #include <arch/multiboot.h>
@@ -68,29 +67,8 @@ static void reserve_kernel_memory(void)
 	memblock_reserve(kern_addr, kern_size);
 }
 
-static void setup_init_gdt(void)
-{
-	static gdt_entry_t init_gdt[GDT_SIZE];
-	static gdt_descr_t init_gdt_descr;
-
-	init_entry(&init_gdt[KERNEL_CODE_ENTRY],
-				0xFFFFFULL, 0x0ULL, KERNEL_CODE_TYPE);
-	init_entry(&init_gdt[KERNEL_DATA_ENTRY],
-				0xFFFFFULL, 0x0ULL, KERNEL_DATA_TYPE);
-
-	init_entry(&init_gdt[USER_CODE_ENTRY],
-				0xFFFFFULL, 0x0ULL, USER_CODE_TYPE);
-	init_entry(&init_gdt[USER_DATA_ENTRY],
-				0xFFFFFULL, 0x0ULL, USER_DATA_TYPE);
-
-	init_descriptor_ptr(&init_gdt_descr, init_gdt, GDT_SIZE);
-	set_gdt(&init_gdt_descr);
-	reload_segment_registers();
-}
-
 void setup_memory(struct multiboot_info *mbi)
 {
-	setup_init_gdt();
 	init_phys_mem_map(mbi);
 	reserve_kernel_memory();
 	remap_lower_memory();
