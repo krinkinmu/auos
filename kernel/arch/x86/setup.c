@@ -82,5 +82,7 @@ void setup_arch(void *bootstrap)
 	setup_idt();
 	setup_init();
 	setup_memory(mbi);
+
+	__asm__ ("int $0x80");
 }
 
