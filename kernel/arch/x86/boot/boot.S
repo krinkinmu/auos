@@ -8,9 +8,9 @@
 	.long AUOS_HEADER_FLAGS
 	.long -(MB_HEADER_MAGIC + AUOS_HEADER_FLAGS)
 
-
 	.section ".bootstrap", "ax"
 	.extern start_kernel
+	.extern kernel_page_tables
 	.global _start
 _start:
 	/*
@@ -33,31 +33,27 @@ _start:
         stosl
 
 	/*
-	 Fill page tables for low memory (1Gb of physical memory)
+	 Fill page tables for low memory (<1Gb of physical memory)
 	*/
-LOW_MEM_SIZE   = (1024 * 1024 * 1024);
-LOW_MEM_FRAMES = (LOW_MEM_SIZE / PAGE_SIZE);
-	movl	$pa(__heap_begin), %edi
+	movl	$pa(kernel_page_tables), %edi
 	movl	$PTE_INIT_ATTR, %eax
-	movl	$LOW_MEM_FRAMES, %ecx
+	movl	$LOWMEM_PAGE_FRAMES, %ecx
 1:
 	stosl
 	addl	$PAGE_SIZE, %eax
 	loop	1b
 
 	/*
-	 Map [0, 1Gb) and [PAGE_OFFSET, PAGE_OFFSET + 1Gb) virtual address
-	 ranges to [0, 1Gb) range of physical memory.
+	 Map [0, <1Gb) and [PAGE_OFFSET, PAGE_OFFSET + <1Gb) virtual address
+	 ranges to [0, <1Gb) range of physical memory.
 	*/
-PDE_OFFSET     = (PAGE_OFFSET >> 20);
-LOW_MEM_TABLES = (LOW_MEM_FRAMES / PTRS_PER_PT);
-	movl	$pa(__heap_begin), %esi
+	movl	$pa(kernel_page_tables), %esi
 	movl	$pa(initial_page_dir), %edx
-	movl	$LOW_MEM_TABLES, %ecx
+	movl	$KERNEL_PAGE_DIRS, %ecx
 1:
 	leal	PDE_INIT_ATTR(%esi), %eax
 	movl	%eax, (%edx)
-	movl	%eax, PDE_OFFSET(%edx)
+	movl	%eax, (LOWMEM_PAGE_DIR << 2)(%edx)
 	addl	$4, %edx
 	addl	$PAGE_SIZE, %esi
 	loop	1b
@@ -71,6 +67,7 @@ LOW_MEM_TABLES = (LOW_MEM_FRAMES / PTRS_PER_PT);
 	*/
 	pushl	$0
 	popfl
+	
 
 #define CR0_STATE	(X86_CR0_PE | X86_CR0_MP | X86_CR0_ET | \
 			 X86_CR0_NE | X86_CR0_WP | X86_CR0_AM | \
