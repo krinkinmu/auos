@@ -36,7 +36,7 @@ static inline uintmax_t maxu(uintmax_t x, uintmax_t y)
 	return x > y ? x : y;
 }
 
-static inline intmax_t maxl(intptr_t x, intmax_t y)
+static inline intmax_t max(intptr_t x, intmax_t y)
 {
 	return x > y ? x : y;
 }
@@ -44,5 +44,7 @@ static inline intmax_t maxl(intptr_t x, intmax_t y)
 
 #define container_of(ptr, type, member) \
         ((type *)((char *)(ptr) - offsetof(type, member)))
+
+#define align(a) __attribute__((aligned(a)))
 
 #endif /*__KERNEL_KERNEL_H__*/
