@@ -24,8 +24,6 @@ SECTIONS
 	.bss : { *(.bss) }
 
 	. = ALIGN(PAGE_SIZE);
-	__heap_begin = .;
-	.brk : { . += 1M; }
 	__bss_end = .;
 	__kernel_end = .;
 

@@ -1,12 +1,14 @@
+#include <kernel/kernel.h>
 #include <kernel/utility.h>
 #include <kernel/debug.h>
+
 #include <arch/asm/cpu.h>
 #include <arch/memory.h>
 #include <arch/memblock.h>
 #include <arch/multiboot.h>
 
-size_t page_frames;
-size_t low_mem_page_frames;
+static size_t page_frame_count;
+static size_t lowmem_page_frame_count;
 
 static void init_phys_mem_map(struct multiboot_info *mbi)
 {
@@ -37,22 +39,18 @@ static void init_phys_mem_map(struct multiboot_info *mbi)
 		mmap_entry += entry->size + sizeof(entry->size);
 	}
 
-	if (max_phys_addr > PHYS_MEM_MAX)
-		max_phys_addr = PHYS_MEM_MAX;
+	page_frame_count = pgd_index(minu(max_phys_addr, PHYS_MEM_MAX));
+        lowmem_page_frame_count = minu(page_frame_count, LOWMEM_PAGE_FRAMES);
 
-	page_frames = 1 + ((max_phys_addr - PAGE_SIZE + 1) >> PAGE_SHIFT);
-	low_mem_page_frames = LOW_PAGE_FRAMES_MAX;
-	if (low_mem_page_frames > page_frames)
-		low_mem_page_frames = page_frames;
-	debug("Page frames at all: 0x%x\n", page_frames);
-	debug("Low mem page frames at all: 0x%x\n", low_mem_page_frames);
+	debug("Page frames at all: 0x%x\n", page_frame_count);
+	debug("Low mem page frames at all: 0x%x\n", lowmem_page_frame_count);
 }
 
 static void remap_lower_memory(void)
 {
-	memcpy(swapper_page_dir + KERNEL_PGD_BOUNDARY,
-		initial_page_dir + KERNEL_PGD_BOUNDARY,
-		KERNEL_PGD_PTRS * sizeof(pde_t));
+	memcpy(swapper_page_dir + LOWMEM_PAGE_DIR,
+		initial_page_dir + LOWMEM_PAGE_DIR,
+		KERNEL_PAGE_DIRS * sizeof(pde_t));
 
 	load_cr3(phys_addr(swapper_page_dir));
 }
@@ -65,6 +63,18 @@ static void reserve_kernel_memory(void)
 
 	debug("Reserve kernel memory 0x%x-0x%x\n", kern_addr, kern_end - 1);
 	memblock_reserve(kern_addr, kern_size);
+}
+
+pte_t kernel_page_tables[KERNEL_PAGE_FRAMES] align(PAGE_SIZE);
+
+size_t page_frames(void)
+{
+	return page_frame_count;
+}
+
+size_t lowmem_page_frames(void)
+{
+	return lowmem_page_frame_count;
 }
 
 void setup_memory(struct multiboot_info *mbi)
