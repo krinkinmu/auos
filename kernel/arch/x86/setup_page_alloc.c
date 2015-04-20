@@ -45,7 +45,7 @@ static void init_node(struct page_list_data *node, const size_t *max_pfns)
 
 	size_t size = (end_pfn - start_pfn) * sizeof(struct page);
 	uintptr_t paddr = memblock_alloc_range(size, PAGE_SIZE, PAGE_SIZE,
-					low_mem_page_frames << PAGE_SHIFT);
+					lowmem_page_frames() << PAGE_SHIFT);
 
 	assert(paddr, "Cannot allocate struct page array\n");
 
@@ -60,8 +60,8 @@ void setup_page_alloc(void)
 {
 	size_t max_zone_pfns[ZONE_TYPES];
 
-	max_zone_pfns[ZONE_NORMAL] = low_mem_page_frames;
-	max_zone_pfns[ZONE_HIGH] = page_frames;
+	max_zone_pfns[ZONE_NORMAL] = lowmem_page_frames();
+	max_zone_pfns[ZONE_HIGH] = page_frames();
 	init_node(&nodes[0], max_zone_pfns);
 	debug("Page allocator is initialized\n");
 }
