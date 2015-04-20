@@ -84,24 +84,24 @@ void setup_arch(void *bootstrap)
 	setup_init();
 	setup_memory(mbi);
 
-	const void const* va = kmap(0xFFFFA000UL, 0);
-	const void const* vb = kmap(0xFFFFB000UL, 0);
-	const void const* vc = kmap(0xFFFFC000UL, 0);
-	const void const* vd = kmap(0xFFFFD000UL, 0);
-	const void const* ve = kmap(0xFFFFE000UL, 0);
-	const void const* vf = kmap(0xFFFFF000UL, 0);
+	const void *const va = kmap(0xFFFFA000UL, 0);
+	const void *const vb = kmap(0xFFFFB000UL, 0);
+	const void *const vc = kmap(0xFFFFC000UL, 0);
+	const void *const vd = kmap(0xFFFFD000UL, 0);
+	const void *const ve = kmap(0xFFFFE000UL, 0);
+	const void *const vf = kmap(0xFFFFF000UL, 0);
 
-	const void const* vaddr1 = kmap(0xFFFF9000UL, 0);
+	const void *const vaddr1 = kmap(0xFFFF9000UL, 0);
 	kunmap(va);
 	kunmap(vb);
 	kunmap(vc);
 	kunmap(vd);
 	kunmap(ve);
-	const void const* vaddr2 = kmap(0xFFFF8000UL, 0);
+	const void *const vaddr2 = kmap(0xFFFF8000UL, 0);
 	kunmap(vf);
 	kunmap(vaddr1);
 	kunmap(vaddr2);
-	const void const* vaddr3 = kmap(0xFFFF7000UL, 0);
+	const void *const vaddr3 = kmap(0xFFFF7000UL, 0);
 	kunmap(vaddr3);
 	debug("Virtual address 0x%x\n", (unsigned)vaddr1);
 	debug("Virtual address 0x%x\n", (unsigned)vaddr2);
