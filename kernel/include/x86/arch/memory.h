@@ -2,18 +2,34 @@
 #define __X86_ARCH_MEMORY_H__
 
 #include <arch/asm/memory.h>
+#include <arch/asm/cpu.h>
 
 #include <stdint.h>
 #include <stddef.h>
 
-#define PAGE_FRAMES_MAX     (1 + (PHYS_MEM_MAX >> PAGE_SHIFT))
-#define LOW_PAGE_FRAMES_MAX (1 + ((PHYS_MEM_MAX - PAGE_OFFSET) >> PAGE_SHIFT))
+#define PTE_PRESENT   X86_PTE_PRESENT
+#define PTE_USER      X86_PTE_USER
+#define PTE_KERNEL    0UL
+#define PTE_READ      0UL
+#define PTE_NOREAD    0UL
+#define PTE_WRITE     X86_PTE_WRITE
+#define PTE_NOWRITE   0UL
+#define PTE_CACHE     0UL
+#define PTE_NOCHACHE  X86_PTE_NOCACHE
+
+#define PDE_PRESENT   X86_PDE_PRESENT
+#define PDE_USER      X86_PDE_USER
+#define PDE_KERNEL    0UL
+#define PDE_READ      0UL
+#define PDE_NOREAD    0UL
+#define PDE_WRITE     X86_PDE_WRITE
+#define PDE_NOWRITE   0UL
+#define PDE_CACHE     0UL
+#define PDE_NOCACHE   X86_PDE_NOCACHE
 
 #define pgd_index(ptr) \
-	(((uintptr_t)(ptr) >> PGDIR_SHIFT) & (PTRS_PER_PGD - 1))
+	(((uintmax_t)(ptr) >> PGDIR_SHIFT) & (PTRS_PER_PGD - 1))
 
-#define KERNEL_PGD_BOUNDARY pgd_index(PAGE_OFFSET)
-#define KERNEL_PGD_PTRS     (PTRS_PER_PGD - KERNEL_PGD_BOUNDARY)
 #define phys_addr(x)        ((uintptr_t)(x) - PAGE_OFFSET)
 #define virt_addr(x)        ((void *)((uintptr_t)(x) + PAGE_OFFSET))
 
@@ -25,28 +41,46 @@ typedef struct { pteval_t pte; } pte_t;
 
 extern pde_t swapper_page_dir[PTRS_PER_PGD];
 extern pde_t initial_page_dir[PTRS_PER_PGD];
+extern pte_t kernel_page_tables[KERNEL_PAGE_FRAMES];
 
 extern char __kernel_begin[], __kernel_end[];
-
-extern size_t page_frames, low_mem_page_frames;
 
 struct multiboot_info;
 void setup_memory(struct multiboot_info *mbi);
 void setup_page_alloc(void);
+size_t page_frames(void);
+size_t lowmem_page_frames(void);
 
-static inline void load_cr3(uintptr_t pde)
-{ __asm__ ("movl %0, %%cr3" : : "a"(pde)); }
+static inline void load_cr3(unsigned long paddr)
+{ __asm__ ("movl %0, %%cr3" : : "a"(paddr)); }
 
-static inline pte_t page_table_entry(uint32_t phys, uint32_t flags)
+static inline unsigned long get_cr3(void)
 {
-	pte_t pte = { (phys & ~(PAGE_SIZE - 1)) | (flags & (PAGE_SIZE - 1)) };
-	return pte;
+	unsigned long ptr;
+	__asm__ ("movl %%cr3, %0" : "=m"(ptr));
+	return ptr;
 }
 
-static inline pde_t page_dir_entry(pte_t *ptr, uint32_t flags)
+static inline pte_t create_table_entry(unsigned long paddr, unsigned long flags)
 {
-	pde_t pde = { phys_addr(ptr) | (flags & (PAGE_SIZE - 1)) };
-	return pde;
+	pte_t pt = { (paddr & ~PAGE_OFFSET_MASK) | (flags & PAGE_OFFSET_MASK) };
+	return pt;
+}
+
+static inline pde_t create_dir_entry(unsigned long paddr, unsigned long flags)
+{
+	pde_t pd = { (paddr & ~PAGE_OFFSET_MASK) | (flags & PAGE_OFFSET_MASK) };
+	return pd;
+}
+
+static inline unsigned long page_flags(pte_t pte)
+{
+	return pte.pte & PAGE_OFFSET_MASK;
+}
+
+static inline unsigned long page_paddr(pte_t pte)
+{
+	return pte.pte & ~PAGE_OFFSET_MASK;
 }
 
 #endif /*__X86_ARCH_MEMORY_H__*/
