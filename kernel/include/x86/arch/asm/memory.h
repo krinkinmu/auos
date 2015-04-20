@@ -1,13 +1,38 @@
 #ifndef __X86_ARCH_ASM_MEMORY_H__
 #define __X86_ARCH_ASM_MEMORY_H__
 
-#define PHYS_MEM_MAX     0xFFFFFFFF
-#define PAGE_OFFSET      0xC0000000
-#define PAGE_SHIFT       12
-#define PAGE_SIZE        (1 << PAGE_SHIFT)
-#define PGDIR_SHIFT      22
-#define PGDIR_SIZE       (1 << PGDIR_SHIFT)
-#define PTRS_PER_PT      1024
-#define PTRS_PER_PGD     1024
+#define PHYS_MEM_MAX         0xFFFFFFFF
+#define PAGE_OFFSET          0xC0000000
+#define KMAP_OFFSET          0xF8000000
+
+#define PAGE_SHIFT           12
+#define PAGE_SIZE            (1 << PAGE_SHIFT)
+#define PAGE_OFFSET_MASK     (PAGE_SIZE - 1)
+#define PGDIR_SHIFT          22
+#define PGDIR_SIZE           (1 << PGDIR_SHIFT)
+#define PAGE_TABLE_MASK      (PGDIR_SIZE - 1)
+#define PTRS_PER_PT          1024
+#define PTRS_PER_PGD         1024
+
+#define PAGE_FRAME(addr)     ((addr) >> PAGE_SHIFT)
+#define PAGE_DIR(addr)       ((addr) >> PGDIR_SHIFT)
+
+#define PAGE_FRAMES          (1 + PAGE_FRAME(PHYS_MEM_MAX))
+#define PAGE_DIRS            (1 + PAGE_DIR(PHYS_MEM_MAX))
+
+#define LOWMEM_PAGE_FRAME    PAGE_FRAME(PAGE_OFFSET)
+#define LOWMEM_PAGE_DIR      PAGE_DIR(PAGE_OFFSET)
+
+#define KMAP_PAGE_FRAME      PAGE_FRAME(KMAP_OFFSET)
+#define KMAP_PAGE_DIR        PAGE_DIR(KMAP_OFFSET)
+
+#define LOWMEM_PAGE_FRAMES   (KMAP_PAGE_FRAME - LOWMEM_PAGE_FRAME)
+#define LOWMEM_PAGE_DIRS     (KMAP_PAGE_DIR - LOWMEM_PAGE_DIR)
+
+#define KMAP_PAGE_FRAMES     (PAGE_FRAMES - KMAP_PAGE_FRAME)
+#define KMAP_PAGE_DIRS       (PAGE_DIRS - KMAP_PAGE_DIR)
+
+#define KERNEL_PAGE_FRAMES   (PAGE_FRAMES - LOWMEM_PAGE_FRAME)
+#define KERNEL_PAGE_DIRS     (PAGE_DIRS - LOWMEM_PAGE_DIR)
 
 #endif /*__X86_ARCH_ASM_MEMORY_H__*/
