@@ -34,7 +34,7 @@ static const void *acpi_find_rsdp_addr(void)
 			virt_addr(0x0E0000ul), virt_addr(0x100000ul));
 }
 
-const struct acpi_table_rsdp *acpi_find_rsdp_table(void)
+static const struct acpi_table_rsdp *acpi_find_rsdp_table(void)
 {
 	const void *addr = acpi_find_rsdp_addr();
 
@@ -43,12 +43,13 @@ const struct acpi_table_rsdp *acpi_find_rsdp_table(void)
 	return 0;
 }
 
-const struct acpi_table_rsdt *acpi_get_rsdt(const struct acpi_table_rsdp *rsdp)
+static const struct acpi_table_rsdt *acpi_get_rsdt_table(
+			const struct acpi_table_rsdp *rsdp)
 {
 	return virt_addr(rsdp->rsdt_paddr);
 }
 
-size_t acpi_table_headers_count(const struct acpi_table_rsdt *rsdt)
+static size_t acpi_table_headers_count(const struct acpi_table_rsdt *rsdt)
 {
 	const uint32_t *begin = rsdt->entries;
 	const uint32_t *end =
@@ -56,8 +57,39 @@ size_t acpi_table_headers_count(const struct acpi_table_rsdt *rsdt)
 	return end - begin;
 }
 
-const struct acpi_table_header *acpi_table_header_get(
+static const struct acpi_table_header *acpi_table_header_get(
 			const struct acpi_table_rsdt *rsdt, size_t idx)
 {
 	return virt_addr(rsdt->entries[idx]);
+}
+
+static const struct acpi_table_rsdp *rsdp_table;
+static const struct acpi_table_rsdt *rsdt_table;
+
+const struct acpi_table_header *acpi_table_find(const char *sign)
+{
+	const size_t tables = acpi_table_headers_count(rsdt_table);
+	for (size_t i = 0; i != tables; ++i) {
+		const struct acpi_table_header *table =
+					acpi_table_header_get(rsdt_table, i);
+		if (!memcmp(table->signature, sign, ACPI_TABLE_SIGN_SIZE))
+			return table;
+	}
+
+	return 0;
+}
+
+int acpi_available(void)
+{
+	return rsdp_table != 0;
+}
+
+void setup_acpi(void)
+{
+	rsdp_table = acpi_find_rsdp_table();
+	if (!rsdp_table) {
+		debug("cannot find rsdp table\n");
+		return;
+	}
+	rsdt_table = acpi_get_rsdt_table(rsdp_table);
 }

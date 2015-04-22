@@ -9,6 +9,8 @@
 #define ACPI_TABLE_SIGN_SIZE   4
 #define ACPI_OEM_ID_SIZE       6
 
+#define ACPI_MADT_SIGN         "APIC"
+
 struct acpi_table_rsdp {
 	char signature[ACPI_RSDP_SIGN_SIZE];
 	uint8_t checksum;
@@ -38,10 +40,49 @@ struct acpi_table_rsdt {
 	uint32_t entries[];
 } __attribute__((packed));
 
-const struct acpi_table_rsdp *acpi_find_rsdp_table(void);
-const struct acpi_table_rsdt *acpi_get_rsdt(const struct acpi_table_rsdp *rsdp);
-size_t acpi_table_headers_count(const struct acpi_table_rsdt *rsdt);
-const struct acpi_table_header *acpi_table_header_get(
-			const struct acpi_table_rsdt *rsdt, size_t idx);
+#define MADT_LOCAL_APIC                0x0
+#define MADT_IO_APIC                   0x1
+#define MADT_INT_SRC_OVERRIDE          0x2
+#define MADT_IO_APIC_NMI               0x3
+#define MADT_LOCAL_APIC_NMI            0x4
+#define MADT_LOCAL_APIC_ADDR_OVERRIDE  0x5
+#define MADT_IO_SAPIC                  0x6
+#define MADT_LOCAL_SAPIC               0x7
+#define MADT_PLATFORM_INT_SRC          0x8
+#define MADT_LOCAL_X2APIC              0x9
+#define MADT_LOCAL_X2APIC_NMI          0xA
+#define MADT_LOCAL_GIC                 0xB
+#define MADT_GIC_DISTRIB               0xC
+
+struct acpi_irq_header {
+	uint8_t type;
+	uint8_t length;
+} __attribute__((packed));
+
+struct acpi_local_apic {
+	struct acpi_irq_header header;
+	uint8_t acpi_cpu_id;
+	uint8_t local_apic_id;
+	uint32_t flags;
+} __attribute__((packed));
+
+struct acpi_io_apic {
+	struct acpi_irq_header header;
+	uint8_t io_apic_id;
+	uint8_t reserved;
+	uint32_t io_apic_paddr;
+	uint32_t gsi_base;
+} __attribute__((packed));
+
+struct acpi_madt_table {
+	struct acpi_table_header header;
+	uint32_t lapic_paddr;
+	uint32_t flags;
+	// struct acpi_irq_header headers[];
+} __attribute__((packed));
+
+void setup_acpi(void);
+int acpi_available(void);
+const struct acpi_table_header *acpi_table_find(const char *sign);
 
 #endif /*__KERNEL_ACPI_H__*/
