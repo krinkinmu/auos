@@ -14,7 +14,7 @@ static void setup_io_apic_default(void)
 	io_apic[0].gsi_base = 0;
 	++io_apic_size;
 
-	debug("Defaul IO APIC at addr 0x%x id %u base %u\n",
+	debug("Default IO APIC at addr 0x%x id %u base %u\n",
 		IO_APIC_DEFAULT_PADDR, io_apic[0].id, io_apic[0].gsi_base);
 }
 
