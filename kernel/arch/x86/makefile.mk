@@ -11,4 +11,5 @@ ARCH_C_SOURCES   := \
 	acpi.c \
 	ioport.c \
 	kmap.c \
-	apic.c
+	apic.c \
+	pic.c
