@@ -42,7 +42,7 @@ struct acpi_table_rsdt {
 
 #define MADT_LOCAL_APIC                0x0
 #define MADT_IO_APIC                   0x1
-#define MADT_INT_SRC_OVERRIDE          0x2
+#define MADT_IRQ_SRC_OVERRIDE          0x2
 #define MADT_IO_APIC_NMI               0x3
 #define MADT_LOCAL_APIC_NMI            0x4
 #define MADT_LOCAL_APIC_ADDR_OVERRIDE  0x5
@@ -59,18 +59,26 @@ struct acpi_irq_header {
 	uint8_t length;
 } __attribute__((packed));
 
+struct acpi_irq_source_override {
+	struct acpi_irq_header header;
+	uint8_t bus;
+	uint8_t source;
+	uint8_t gsi;
+	uint16_t flags;
+} __attribute__((packed));
+
 struct acpi_local_apic {
 	struct acpi_irq_header header;
-	uint8_t acpi_cpu_id;
-	uint8_t local_apic_id;
+	uint8_t cpu_id;
+	uint8_t apic_id;
 	uint32_t flags;
 } __attribute__((packed));
 
 struct acpi_io_apic {
 	struct acpi_irq_header header;
-	uint8_t io_apic_id;
+	uint8_t apic_id;
 	uint8_t reserved;
-	uint32_t io_apic_paddr;
+	uint32_t apic_paddr;
 	uint32_t gsi_base;
 } __attribute__((packed));
 
