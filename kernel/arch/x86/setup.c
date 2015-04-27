@@ -84,6 +84,6 @@ void setup_arch(void *bootstrap)
 	setup_idt();
 	setup_memory(mbi);
 	setup_acpi();
-	setup_io_apic();
+	setup_apic();
 	setup_init();
 }
