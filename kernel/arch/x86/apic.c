@@ -1,88 +1,115 @@
 #include <kernel/acpi.h>
 #include <kernel/debug.h>
 #include <arch/apic.h>
-#include <arch/pic.h>
 
 #include <stddef.h>
 
-static struct io_apic io_apic[16];
-static size_t io_apic_size;
+static struct io_apic apic_io_apic[IO_APIC_MAX_COUNT];
+static size_t apic_io_apic_count;
 
-static uint32_t io_apic_read(void *vaddr, unsigned reg)
+static struct local_apic apic_local_apic[LOCAL_APIC_MAX_COUNT];
+static size_t apic_local_apic_count;
+
+static uint32_t apic_read(void *vaddr, unsigned reg)
 {
 	volatile uint32_t *io = vaddr;
 	io[0] = reg & 0xFFU;
 	return io[4];
 }
 
-static unsigned io_apic_irqs_count(void *vaddr)
+static unsigned apic_io_apic_irqs(void *vaddr)
 {
-	return 1 + ((io_apic_read(vaddr, IO_APIC_VERSION_REG) >> 16) & 0xFFU);
+	return 1 + ((apic_read(vaddr, IO_APIC_VERSION_REG) >> 16) & 0xFFU);
 }
 
-static void setup_io_apic_default(void)
+static unsigned apic_io_apic_id(void *vaddr)
 {
-	void *io_base = kmap(IO_APIC_DEFAULT_PADDR, IO_APIC_PAGE_FLAGS);
-	io_apic[0].vaddr = io_base;
-	io_apic[0].gsi_begin = 0;
-        io_apic[0].gsi_end = io_apic_irqs_count(io_base);
-	++io_apic_size;
-
-	debug("Default IO APIC at addr 0x%x irqs [%u, %u)\n",
-			IO_APIC_DEFAULT_PADDR,
-			io_apic[0].gsi_begin,
-			io_apic[0].gsi_end);
+	return (apic_read(vaddr, IO_APIC_ID_REG) >> 24) & 0x0FU;
 }
 
-static int setup_io_apic_acpi(void)
+static void apic_parse_irq_source_override(
+			const struct acpi_irq_source_override *descr)
 {
-	if (!acpi_available())
-		return 0;
+	debug("Standard ISA irq %u connected to %u gsi, flags %x\n",
+		descr->source,
+		descr->gsi,
+		descr->flags);
+}
 
-	const struct acpi_madt_table *tbl =
-		(const struct acpi_madt_table *)acpi_table_find(ACPI_MADT_SIGN);
-	if (!tbl)
-		return 0;
-
-	const char *begin = (const char *)tbl;
-	const char *end = begin + tbl->header.length;
-	const char *header = (const char *)(tbl + 1);
-
-	while (header < end) {
-		const struct acpi_irq_header *irq_hdr =
-					(const struct acpi_irq_header *)header;
-
-		header += irq_hdr->length;
-		if (irq_hdr->type != MADT_IO_APIC)
-			continue;
-
-		const struct acpi_io_apic *apic =
-					(const struct acpi_io_apic *)irq_hdr;
-
-		void *io_base = kmap(apic->io_apic_paddr, IO_APIC_PAGE_FLAGS);
-		const unsigned gsi_begin = apic->gsi_base;
-		const unsigned gsi_count = io_apic_irqs_count(io_base);
-
-		io_apic[io_apic_size].vaddr = io_base;
-		io_apic[io_apic_size].gsi_begin = gsi_begin;
-		io_apic[io_apic_size].gsi_end = gsi_begin + gsi_count;
-
-		debug("Found IO APIC at addr 0x%x base [%u, %u)\n",
-				apic->io_apic_paddr,
-				gsi_begin,
-				gsi_begin + gsi_count);
-		++io_apic_size;
+static void apic_parse_io_apic(const struct acpi_io_apic *apic)
+{
+	if (apic_io_apic_count == IO_APIC_MAX_COUNT) {
+		debug("Ignore IO APIC [%u]\n", apic->apic_id);
+		return;
 	}
 
-	return 1;
+	void *io_base = kmap(apic->apic_paddr, IO_APIC_PAGE_FLAGS);
+	const unsigned gsi_begin = apic->gsi_base;
+	const unsigned gsi_end = gsi_begin + apic_io_apic_irqs(io_base);
+	const unsigned id = apic_io_apic_id(io_base);
+
+	assert(apic->apic_id == id,
+		"ACPI reported IO APIC id doesn't match IO APIC id\n");
+
+	apic_io_apic[apic_io_apic_count].vaddr = io_base;
+	apic_io_apic[apic_io_apic_count].gsi_begin = gsi_begin;
+	apic_io_apic[apic_io_apic_count].gsi_end = gsi_end;
+	apic_io_apic[apic_io_apic_count].id = id;
+	++apic_io_apic_count;
+
+	debug("Found IO APIC[%u] at addr 0x%x irqs [%u, %u)\n",
+		id,
+		apic->apic_paddr,
+		gsi_begin,
+		gsi_end);
 }
 
-void setup_io_apic(void)
+static void apic_parse_local_apic(const struct acpi_local_apic *apic)
 {
-	if (setup_io_apic_acpi())
+	if (apic_local_apic_count == LOCAL_APIC_MAX_COUNT) {
+		debug("Ignore IO APIC [%u]\n", apic->apic_id);
 		return;
-	setup_io_apic_default();
+	}
 
-	pic_remap(0x20U);
-	pic_mask_interrupts(0xFFU);
+	apic_local_apic[apic_local_apic_count].id = apic->apic_id;
+	++apic_local_apic_count;
+	debug("Found Local APIC[%u]\n", apic->apic_id);
+}
+
+static void apic_parse_madt(const struct acpi_madt_table *tbl)
+{
+	const char *end = (const char *)tbl + tbl->header.length;
+	const char *irq_ptr = (const char *)(tbl + 1);
+
+	while (irq_ptr < end) {
+		const struct acpi_irq_header *header = (const void *)irq_ptr;
+		irq_ptr += header->length;
+		switch (header->type) {
+		case MADT_IO_APIC:
+			apic_parse_io_apic((const void *)header);
+			break;
+		case MADT_LOCAL_APIC:
+			apic_parse_local_apic((const void *)header);
+			break;
+		case MADT_IRQ_SRC_OVERRIDE:
+			apic_parse_irq_source_override((const void *)header);
+			break;
+		default:
+			debug("Unknown MADT header %u\n", header->type);
+			break;
+		}
+	}
+
+	void *local_apic_vaddr = kmap(tbl->lapic_paddr, LOCAL_APIC_PAGE_FLAGS);
+	for (unsigned i = 0; i != apic_local_apic_count; ++i)
+		apic_local_apic[i].vaddr = local_apic_vaddr;
+}
+
+void setup_apic(void)
+{
+	assert(acpi_available(), "ACPI inavailable!\n");
+	const struct acpi_madt_table *tbl =
+				(const void *)acpi_table_find(ACPI_MADT_SIGN);
+	assert(tbl, "There is no MADT!");
+	apic_parse_madt(tbl);
 }
