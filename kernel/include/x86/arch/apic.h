@@ -3,14 +3,13 @@
 
 #include <kernel/kmap.h>
 
-#define IO_APIC_DEFAULT_PADDR 0xFEC00000UL
-#define IO_APIC_DEFAULT_PADDR 0xFEC00000UL
-#define IO_APIC_PAGE_FLAGS    (PTE_KERNEL | PTE_READ | PTE_WRITE | PTE_NOCACHE)
-#define LOCAL_APIC_PAGE_FLAGS IO_APIC_PAGE_FLAGS
-#define IO_APIC_ID_REG        0x00U
-#define IO_APIC_VERSION_REG   0x01U
-#define IO_APIC_REDTBL_REG    0x10U
-
+#define IO_APIC_DEFAULT_PADDR      0xFEC00000UL
+#define IO_APIC_DEFAULT_PADDR      0xFEC00000UL
+#define IO_APIC_PAGE_FLAGS         (PTE_KERNEL | PTE_READ | PTE_WRITE | \
+					PTE_NOCACHE)
+#define IO_APIC_IDR                0x00U
+#define IO_APIC_VR                 0x01U
+#define IO_APIC_REDTBLR            0x10U
 #define IO_APIC_IRQ_POLARITY_HIGH  0x0UL
 #define IO_APIC_IRQ_POLARITY_LOW   BITUL(12)
 #define IO_APIC_IRQ_TRIGGER_EDGE   0x0UL
@@ -18,32 +17,30 @@
 #define IO_APIC_IRQ_DEST_LOGICAL   BITUL(11)
 #define IO_APIC_IRQ_LOW_PRIORITY   BITUL(8)
 #define IO_APIC_IRQ_MASKED         BITUL(16)
-#define IO_APIC_DEST_ALL    0xFFU
+#define IO_APIC_DEST_ALL           0xFFU
+#define IO_APIC_MAX_COUNT          0x10U
 
-#define IO_APIC_MAX_COUNT     0x10
-#define LOCAL_APIC_MAX_COUNT  0x08
+#define LOCAL_APIC_IDR             0x08U
+#define LOCAL_APIC_LDR             0x34U
+#define LOCAL_APIC_DFR             0x38U
+#define LOCAL_APIC_SIVR            0x3CU
+#define LOCAL_APIC_MAX_COUNT       0x08U
+#define LOCAL_APIC_PAGE_FLAGS      IO_APIC_PAGE_FLAGS
 
-#define ISA_POLARITY_MASK     0x03
-#define ISA_POLARITY_DEFAULT  0x00
-#define ISA_POLARITY_HIGH     0x01
-#define ISA_POLARITY_LOW      0x03
-
-#define ISA_TRIGGER_MASK      0x0C
-#define ISA_TRIGGER_DEFAULT   0x00
-#define ISA_TRIGGER_EDGE      0x04
-#define ISA_TRIGGER_LEVEL     0x0C
-
-#define ISA_IRQ_MAX_COUNT     0x10
+#define ISA_POLARITY_MASK          0x03U
+#define ISA_POLARITY_DEFAULT       0x00U
+#define ISA_POLARITY_HIGH          0x01U
+#define ISA_POLARITY_LOW           0x03U
+#define ISA_TRIGGER_MASK           0x0CU
+#define ISA_TRIGGER_DEFAULT        0x00U
+#define ISA_TRIGGER_EDGE           0x04U
+#define ISA_TRIGGER_LEVEL          0x0CU
+#define ISA_IRQ_MAX_COUNT          0x10U
 
 struct io_apic {
 	void *vaddr;
 	unsigned gsi_begin;
 	unsigned gsi_end;
-	unsigned id;
-};
-
-struct local_apic {
-	void *vaddr;
 	unsigned id;
 };
 

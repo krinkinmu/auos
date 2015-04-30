@@ -7,7 +7,8 @@
 static struct io_apic apic_io_apic[IO_APIC_MAX_COUNT];
 static size_t apic_io_apic_count;
 
-static struct local_apic apic_local_apic[LOCAL_APIC_MAX_COUNT];
+static unsigned apic_local_apic_id[LOCAL_APIC_MAX_COUNT];
+static void *apic_local_apic_vaddr;
 static size_t apic_local_apic_count;
 
 static struct isa_irq_map apic_isa_map[ISA_IRQ_MAX_COUNT];
@@ -19,6 +20,12 @@ static uint32_t io_apic_read(void *vaddr, unsigned reg)
 	return io[4];
 }
 
+static uint32_t local_apic_read(unsigned reg)
+{
+	volatile uint32_t *io = apic_local_apic_vaddr;
+	return io[reg];
+}
+
 static void io_apic_write(void *vaddr, unsigned reg, uint32_t value)
 {
 	volatile uint32_t *io = vaddr;
@@ -26,14 +33,36 @@ static void io_apic_write(void *vaddr, unsigned reg, uint32_t value)
 	io[4] = value;
 }
 
+static void local_apic_write(unsigned reg, uint32_t value)
+{
+	volatile uint32_t *io = apic_local_apic_vaddr;
+	io[reg] = value;
+}
+
 static unsigned apic_io_apic_irqs(void *vaddr)
 {
-	return 1 + ((io_apic_read(vaddr, IO_APIC_VERSION_REG) >> 16) & 0xFFU);
+	return 1 + ((io_apic_read(vaddr, IO_APIC_VR) >> 16) & 0xFFU);
 }
 
 static unsigned apic_io_apic_id(void *vaddr)
 {
-	return (io_apic_read(vaddr, IO_APIC_ID_REG) >> 24) & 0x0FU;
+	return (io_apic_read(vaddr, IO_APIC_IDR) >> 24) & 0x0FU;
+}
+
+static void local_apic_set_lid(unsigned id)
+{
+	local_apic_write(LOCAL_APIC_LDR, (uint32_t)id << 24);
+}
+
+static unsigned local_apic_pid(void)
+{
+	return local_apic_read(LOCAL_APIC_IDR) >> 24;
+}
+
+static void local_apic_set_spurious_vector(void)
+{
+	const uint32_t siv = 0x13FFU;
+	local_apic_write(LOCAL_APIC_SIVR, siv);
 }
 
 static void apic_parse_irq_source_override(
@@ -57,6 +86,9 @@ static void apic_parse_irq_source_override(
 		map.flags |= IO_APIC_IRQ_TRIGGER_LEVEL;
 	else
 		map.flags |= IO_APIC_IRQ_TRIGGER_EDGE;
+
+	if (descr->gsi < ISA_IRQ_MAX_COUNT)
+		apic_isa_map[descr->gsi].flags |= IO_APIC_IRQ_MASKED;
 
 	apic_isa_map[descr->source] = map;
 
@@ -101,7 +133,7 @@ static void apic_parse_local_apic(const struct acpi_local_apic *apic)
 		return;
 	}
 
-	apic_local_apic[apic_local_apic_count].id = apic->apic_id;
+	apic_local_apic_id[apic_local_apic_count] = apic->apic_id;
 	++apic_local_apic_count;
 	debug("Found Local APIC[%u]\n", apic->apic_id);
 }
@@ -110,6 +142,8 @@ static void apic_parse_madt(const struct acpi_madt_table *tbl)
 {
 	const char *end = (const char *)tbl + tbl->header.length;
 	const char *irq_ptr = (const char *)(tbl + 1);
+
+	apic_local_apic_vaddr = kmap(tbl->lapic_paddr, LOCAL_APIC_PAGE_FLAGS);
 
 	while (irq_ptr < end) {
 		const struct acpi_irq_header *header = (const void *)irq_ptr;
@@ -129,20 +163,16 @@ static void apic_parse_madt(const struct acpi_madt_table *tbl)
 			break;
 		}
 	}
-
-	void *local_apic_vaddr = kmap(tbl->lapic_paddr, LOCAL_APIC_PAGE_FLAGS);
-	for (unsigned i = 0; i != apic_local_apic_count; ++i)
-		apic_local_apic[i].vaddr = local_apic_vaddr;
 }
 
 static void apic_setup_irq(struct io_apic *apic, unsigned pin, unsigned dst,
 			unsigned long flags, unsigned cpus)
 {
-	const uint32_t low = (dst & 0xFFU) | (flags & 0xFF00UL);
+	const uint32_t low = (dst & 0xFFUL) | (flags & 0xFFF00UL);
 	const uint32_t high = ((uint32_t)cpus & 0xFFU) << 24;
 
-	io_apic_write(apic->vaddr, IO_APIC_REDTBL_REG + 2 * pin + 1, high);
-	io_apic_write(apic->vaddr, IO_APIC_REDTBL_REG + 2 * pin, low);
+	io_apic_write(apic->vaddr, IO_APIC_REDTBLR + 2 * pin + 1, high);
+	io_apic_write(apic->vaddr, IO_APIC_REDTBLR + 2 * pin, low);
 }
 
 static void apic_setup_isa_irqs_default(void)
@@ -186,8 +216,22 @@ void setup_apic(void)
 	assert(acpi_available(), "ACPI inavailable!\n");
 	const struct acpi_madt_table *tbl =
 				(const void *)acpi_table_find(ACPI_MADT_SIGN);
-	assert(tbl, "There is no MADT!");
+	assert(tbl, "There is no MADT!\n");
 	apic_setup_isa_irqs_default();
 	apic_parse_madt(tbl);
 	apic_setup_irqs();
+}
+
+void setup_local_apic(void)
+{
+	const unsigned pid = local_apic_pid();
+	for (unsigned i = 0; i != apic_local_apic_count; ++i) {
+		if (pid == apic_local_apic_id[i]) {
+			local_apic_set_lid(1U << (i % 8));
+			local_apic_set_spurious_vector();
+			return;
+		}
+	}
+
+	panic("Local APIC[%u] not found!\n", pid);
 }

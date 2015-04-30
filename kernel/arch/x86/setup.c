@@ -9,6 +9,8 @@
 #include <arch/gdt.h>
 #include <arch/idt.h>
 #include <arch/apic.h>
+#include <arch/pic.h>
+
 
 static struct gdt_entry gdt[GDT_SIZE];
 static struct gdt_ptr gdt_ptr;
@@ -34,11 +36,12 @@ static struct idt_ptr idt_ptr;
 
 static void unexpected(void)
 {
-	panic("Unexpected interrupt!\n");
+	panic("Unexpected Interrupt!\n");
 }
 
 static void setup_idt(void)
 {
+	
 	for (unsigned i = 0; i != 256; ++i)
 		init_isr_gate(idt + i, &unexpected, IDT_KERNEL);
 
@@ -82,8 +85,12 @@ void setup_arch(void *bootstrap)
 
 	setup_gdt();
 	setup_idt();
+	pic_remap(0x20);
+	pic_mask_interrupts(0xff);
 	setup_memory(mbi);
 	setup_acpi();
-	setup_apic();
 	setup_init();
+	setup_apic();
+	setup_local_apic();
+	__asm__ ("sti");
 }
