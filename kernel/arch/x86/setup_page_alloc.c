@@ -35,6 +35,19 @@ static void init_zone(struct page_list_data *node, struct zone *zone,
 	debug("there are 0x%x free pages\n", free);
 }
 
+static struct page *alloc_page_array(unsigned long pages)
+{
+	static const unsigned long begin = PAGE_SIZE;
+	static const unsigned long end = LOWMEM_PAGE_FRAMES << PAGE_SHIFT;
+	static const unsigned align = PAGE_SIZE;
+
+	const unsigned long size = pages * sizeof(struct page);
+	const unsigned long paddr = boot_mem_alloc(size, align, begin, end);
+
+	assert(paddr != end, "alloc_page_array: allocation failed\n");
+	return virt_addr(paddr);
+}
+
 static void init_node(struct page_list_data *node, const size_t *max_pfns)
 {
 	size_t start_pfn = 0;
@@ -42,15 +55,8 @@ static void init_node(struct page_list_data *node, const size_t *max_pfns)
 
 	node->start_pfn = start_pfn;
 	node->end_pfn = end_pfn;
+	node->pages = alloc_page_array(end_pfn - start_pfn);
 
-	const size_t size = (end_pfn - start_pfn) * sizeof(struct page);
-	const unsigned long end = lowmem_page_frames() << PAGE_SHIFT;
-	const unsigned long paddr = boot_mem_alloc(size, PAGE_SIZE, PAGE_SIZE,
-				end);
-
-	assert(paddr != end, "Cannot allocate struct page array\n");
-
-	node->pages = virt_addr(paddr);
 	for (size_t i = 0; i != ZONE_TYPES; ++i) {
 		init_zone(node, &node->zones[i], start_pfn, max_pfns[i]);
 		start_pfn = max_pfns[i];
