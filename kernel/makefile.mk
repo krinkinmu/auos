@@ -6,4 +6,5 @@ C_SOURCES   := \
 	slab_cache.c \
 	io.c \
 	console.c \
-	bootmem.c
+	bootmem.c \
+	acpi.c

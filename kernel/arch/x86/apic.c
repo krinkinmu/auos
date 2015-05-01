@@ -65,8 +65,7 @@ static void local_apic_set_spurious_vector(void)
 	local_apic_write(LOCAL_APIC_SIVR, siv);
 }
 
-static void apic_parse_irq_source_override(
-			const struct acpi_irq_source_override *descr)
+static void apic_parse_irq_source_override(const struct acpi_isa_source *descr)
 {
 	if (descr->source == descr->gsi && !(descr->flags &
 				(ISA_POLARITY_MASK | ISA_TRIGGER_MASK)))
@@ -98,7 +97,7 @@ static void apic_parse_irq_source_override(
 		descr->flags);
 }
 
-static void apic_parse_io_apic(const struct acpi_io_apic *apic)
+static void apic_parse_io_apic(const struct acpi_ioapic *apic)
 {
 	if (apic_io_apic_count == IO_APIC_MAX_COUNT) {
 		debug("Ignore IO APIC [%u]\n", apic->apic_id);
@@ -126,7 +125,7 @@ static void apic_parse_io_apic(const struct acpi_io_apic *apic)
 		gsi_end);
 }
 
-static void apic_parse_local_apic(const struct acpi_local_apic *apic)
+static void apic_parse_local_apic(const struct acpi_lapic *apic)
 {
 	if (apic_local_apic_count == LOCAL_APIC_MAX_COUNT) {
 		debug("Ignore IO APIC [%u]\n", apic->apic_id);
@@ -138,7 +137,7 @@ static void apic_parse_local_apic(const struct acpi_local_apic *apic)
 	debug("Found Local APIC[%u]\n", apic->apic_id);
 }
 
-static void apic_parse_madt(const struct acpi_madt_table *tbl)
+static void apic_parse_madt(const struct acpi_madt *tbl)
 {
 	const char *end = (const char *)tbl + tbl->header.length;
 	const char *irq_ptr = (const char *)(tbl + 1);
@@ -146,17 +145,18 @@ static void apic_parse_madt(const struct acpi_madt_table *tbl)
 	apic_local_apic_vaddr = kmap(tbl->lapic_paddr, LOCAL_APIC_PAGE_FLAGS);
 
 	while (irq_ptr < end) {
-		const struct acpi_irq_header *header = (const void *)irq_ptr;
+		const struct acpi_madt_header *header = (void *)irq_ptr;
+
 		irq_ptr += header->length;
 		switch (header->type) {
-		case MADT_IO_APIC:
-			apic_parse_io_apic((const void *)header);
+		case madt_ioapic:
+			apic_parse_io_apic((void *)header);
 			break;
-		case MADT_LOCAL_APIC:
-			apic_parse_local_apic((const void *)header);
+		case madt_lapic:
+			apic_parse_local_apic((void *)header);
 			break;
-		case MADT_IRQ_SRC_OVERRIDE:
-			apic_parse_irq_source_override((const void *)header);
+		case madt_isa_source:
+			apic_parse_irq_source_override((void *)header);
 			break;
 		default:
 			debug("Unknown MADT header %u\n", header->type);
@@ -214,8 +214,7 @@ static void apic_setup_irqs(void)
 void setup_apic(void)
 {
 	assert(acpi_available(), "ACPI inavailable!\n");
-	const struct acpi_madt_table *tbl =
-				(const void *)acpi_table_find(ACPI_MADT_SIGN);
+	const struct acpi_madt *tbl = (void *)acpi_table_find(ACPI_MADT_SIGN);
 	assert(tbl, "There is no MADT!\n");
 	apic_setup_isa_irqs_default();
 	apic_parse_madt(tbl);
