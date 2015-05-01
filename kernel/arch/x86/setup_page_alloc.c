@@ -1,8 +1,8 @@
 #include <kernel/page_alloc.h>
 #include <kernel/kernel.h>
 #include <kernel/debug.h>
+#include <kernel/bootmem.h>
 #include <arch/memory.h>
-#include <arch/memblock.h>
 
 struct page_list_data nodes[1];
 
@@ -25,7 +25,7 @@ static void init_zone(struct page_list_data *node, struct zone *zone,
 
 	size_t free = 0;
 	for (size_t pfn = start_pfn; pfn != end_pfn; ++pfn) {
-		if (memblock_is_free(pfn << PAGE_SHIFT, PAGE_SIZE)) {
+		if (boot_mem_is_free(pfn << PAGE_SHIFT, PAGE_SIZE)) {
 			free_pages(pfn_to_page(pfn - start_pfn), 0);
 			++free;
 		}
@@ -43,11 +43,12 @@ static void init_node(struct page_list_data *node, const size_t *max_pfns)
 	node->start_pfn = start_pfn;
 	node->end_pfn = end_pfn;
 
-	size_t size = (end_pfn - start_pfn) * sizeof(struct page);
-	uintptr_t paddr = memblock_alloc_range(size, PAGE_SIZE, PAGE_SIZE,
-					lowmem_page_frames() << PAGE_SHIFT);
+	const size_t size = (end_pfn - start_pfn) * sizeof(struct page);
+	const unsigned long end = lowmem_page_frames() << PAGE_SHIFT;
+	const unsigned long paddr = boot_mem_alloc(size, PAGE_SIZE, PAGE_SIZE,
+				end);
 
-	assert(paddr, "Cannot allocate struct page array\n");
+	assert(paddr != end, "Cannot allocate struct page array\n");
 
 	node->pages = virt_addr(paddr);
 	for (size_t i = 0; i != ZONE_TYPES; ++i) {
