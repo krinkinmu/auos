@@ -7,4 +7,5 @@ C_SOURCES   := \
 	io.c \
 	console.c \
 	bootmem.c \
-	acpi.c
+	acpi.c \
+	irq.c
