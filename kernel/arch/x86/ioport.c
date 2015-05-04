@@ -8,6 +8,7 @@ void out8(uint16_t port, uint8_t b)
 uint8_t in8(uint16_t port)
 {
 	uint8_t b;
+
 	__asm__("inb %1, %0" : "=a"(b) : "d"(port));
 	return b;
 }
@@ -20,6 +21,7 @@ void out16(uint16_t port, uint16_t w)
 uint16_t in16(uint16_t port)
 {
 	uint16_t w;
+
 	__asm__("inw %1, %0" : "=a"(w) : "d"(port));
 	return w;
 }
@@ -32,6 +34,7 @@ void out32(uint16_t port, uint32_t l)
 uint32_t in32(uint16_t port)
 {
 	uint32_t l;
+
 	__asm__("inl %1, %0" : "=a"(l) : "d"(port));
 	return l;
 }
