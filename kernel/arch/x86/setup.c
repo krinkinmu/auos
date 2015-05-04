@@ -2,6 +2,7 @@
 #include <kernel/list.h>
 #include <kernel/task.h>
 #include <kernel/acpi.h>
+#include <kernel/irq.h>
 
 #include <arch/memory.h>
 #include <arch/multiboot.h>
@@ -9,7 +10,7 @@
 #include <arch/gdt.h>
 #include <arch/idt.h>
 #include <arch/apic.h>
-#include <arch/pic.h>
+#include <arch/i8259a.h>
 
 
 static struct gdt_entry gdt[GDT_SIZE];
@@ -85,8 +86,8 @@ void setup_arch(void *bootstrap)
 
 	setup_gdt();
 	setup_idt();
-	pic_remap(0x20);
-	pic_mask_interrupts(0xff);
+	setup_i8259a();
+	irqchip_remap(0x20);
 	setup_memory(mbi);
 	setup_acpi();
 	setup_init();
