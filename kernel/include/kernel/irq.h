@@ -1,6 +1,8 @@
 #ifndef __KERNEL_IRQ_H__
 #define __KERNEL_IRQ_H__
 
+#define HW_INTERRUPT_OFFSET 0x20U
+
 enum hwirq_flags {
 	HWIRQ_RISING = 1,
 	HWIRQ_FALLING = 2,
@@ -10,7 +12,6 @@ enum hwirq_flags {
 };
 
 struct irqchip {
-	void (*remap)(unsigned);
 	void (*setup)(unsigned, unsigned long);
 	void (*mask)(unsigned);
 	void (*unmask)(unsigned);
@@ -19,7 +20,6 @@ struct irqchip {
 
 void irqchip_register(const struct irqchip *chip);
 
-void irqchip_remap(unsigned offset);
 void irqchip_setup(unsigned irq, unsigned long flags);
 void irqchip_mask(unsigned irq);
 void irqchip_unmask(unsigned irq);

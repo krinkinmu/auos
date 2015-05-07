@@ -16,12 +16,6 @@ void irqchip_register(const struct irqchip *chip)
 	irqchip = chip;
 }
 
-void irqchip_remap(unsigned offset)
-{
-	irqchip_must_have(remap);
-	irqchip->remap(offset);
-}
-
 void irqchip_setup(unsigned irq, unsigned long flags)
 {
 	irqchip_must_have(setup);
