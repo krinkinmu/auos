@@ -2,6 +2,7 @@
 #define __KERNEL_ACPI_H__
 
 #include <stdint.h>
+#include <stddef.h>
 
 #define ACPI_RSDP_SIGN_SIZE            8
 #define ACPI_OEM_ID_SIZE               6
@@ -49,9 +50,9 @@ struct acpi_madt {
 } __attribute__((packed));
 
 enum acpi_madt_type {
-	madt_lapic      = 0x0,
-	madt_ioapic     = 0x1,
-	madt_isa_source = 0x2,
+	MADT_LOCAL_APIC = 0x0,
+	MADT_IO_APIC = 0x1,
+	MADT_ISA_SOURCE = 0x2,
 };
 
 struct acpi_madt_header {
@@ -67,14 +68,14 @@ struct acpi_isa_source {
 	uint16_t flags;
 } __attribute__((packed));
 
-struct acpi_lapic {
+struct acpi_local_apic {
 	struct acpi_madt_header header;
 	uint8_t cpu_id;
 	uint8_t apic_id;
 	uint32_t flags;
 } __attribute__((packed));
 
-struct acpi_ioapic {
+struct acpi_io_apic {
 	struct acpi_madt_header header;
 	uint8_t apic_id;
 	uint8_t reserved;
@@ -87,5 +88,8 @@ const struct acpi_rsdp* acpi_rsdp_probe(void);
 void setup_acpi(void);
 int acpi_available(void);
 const struct acpi_table_header *acpi_table_find(const char *sign);
+
+typedef void(*madt_handler_t)(const struct acpi_madt_header *);
+size_t acpi_parse_madt(enum acpi_madt_type type, madt_handler_t handler);
 
 #endif /*__KERNEL_ACPI_H__*/

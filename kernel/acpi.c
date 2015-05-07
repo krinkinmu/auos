@@ -48,3 +48,26 @@ const struct acpi_table_header* acpi_table_find(const char *sign)
 	}
 	return 0;
 }
+
+size_t acpi_parse_madt(enum acpi_madt_type type, madt_handler_t handler)
+{
+	assert(acpi_available(), "ACPI unavailable\n");
+	const struct acpi_madt *tbl =
+		(const void *)acpi_table_find(ACPI_MADT_SIGN);
+	assert(tbl, "There is no MADT\n");
+
+	const char *end = (const char *)tbl + tbl->header.length;
+	const char *hdr = (const char *)(tbl + 1);
+	size_t count = 0;
+
+	while (hdr < end) {
+		const struct acpi_madt_header *header = (const void *)hdr;
+
+		if (header->type == type) {
+			handler(header);
+			++count;
+		}
+	}
+
+	return count;
+}
