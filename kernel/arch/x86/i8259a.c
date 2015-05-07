@@ -64,6 +64,7 @@ static void pic_setup(unsigned irq, unsigned long flags)
 		pic_unmask(irq);
 }
 
+/*
 static int pic_real(unsigned irq)
 {
 	if (irq < 8) {
@@ -73,12 +74,10 @@ static int pic_real(unsigned irq)
 	out8(PIC_SLAVE_CMD_PORT, PIC_ISR);
 	return in8(PIC_SLAVE_CMD_PORT) & (BITU(irq) >> PIC_IRQS_PER_CHIP);
 }
+*/
 
 static void pic_eoi(unsigned irq)
 {
-	if (pic_real(irq))
-		pic_mask(irq);
-
 	if (irq >= 8) {
 		out8(PIC_SLAVE_CMD_PORT, PIC_EOI_CMD + (irq & 7));
 		out8(PIC_MASTER_CMD_PORT, PIC_EOI_CMD + PIC_SLAVE_IRQ);
@@ -88,7 +87,6 @@ static void pic_eoi(unsigned irq)
 }
 
 static const struct irqchip i8259a = {
-	.remap = &pic_remap,
 	.setup = &pic_setup,
 	.mask = &pic_mask,
 	.unmask = &pic_unmask,
@@ -97,5 +95,6 @@ static const struct irqchip i8259a = {
 
 void setup_i8259a(void)
 {
+	pic_remap(HW_INTERRUPT_OFFSET);
 	irqchip_register(&i8259a);
 }
