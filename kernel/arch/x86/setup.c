@@ -87,7 +87,6 @@ void setup_arch(void *bootstrap)
 	setup_gdt();
 	setup_idt();
 	setup_i8259a();
-	irqchip_remap(0x20);
 	setup_memory(mbi);
 	setup_acpi();
 	setup_init();
