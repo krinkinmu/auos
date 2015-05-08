@@ -1,4 +1,6 @@
-ARCH_ASM_SOURCES :=
+ARCH_ASM_SOURCES := \
+	interrupt.S
+
 ARCH_C_SOURCES   := \
 	setup.c \
 	vga_console.c \
