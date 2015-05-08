@@ -63,6 +63,7 @@ size_t acpi_parse_madt(enum acpi_madt_type type, madt_handler_t handler)
 	while (hdr < end) {
 		const struct acpi_madt_header *header = (const void *)hdr;
 
+		hdr += header->length;
 		if (header->type == type) {
 			handler(header);
 			++count;
