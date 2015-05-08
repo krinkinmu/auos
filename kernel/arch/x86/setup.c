@@ -35,16 +35,21 @@ static void setup_gdt(void)
 static struct idt_entry idt[IDT_SIZE];
 static struct idt_ptr idt_ptr;
 
-static void unexpected(void)
-{
-	panic("Unexpected Interrupt!\n");
+void irq_process(void *unused) {
+	(void) unused;
+	panic("Unexpected (so far) interrupt\n");
 }
 
 static void setup_idt(void)
 {
+	extern char raw_irq_handler[];
 	
-	for (unsigned i = 0; i != 256; ++i)
-		init_isr_gate(idt + i, &unexpected, IDT_KERNEL);
+	for (unsigned i = 0; i != 256; ++i) {
+		const unsigned long isr =
+			(unsigned long)(raw_irq_handler + i * 16);
+
+		init_isr_gate(idt + i, isr, IDT_KERNEL);
+	}
 
 	init_idt_ptr(&idt_ptr, idt, IDT_SIZE);
 	set_idt(&idt_ptr);
@@ -83,7 +88,6 @@ void setup_arch(void *bootstrap)
 
 	init_vga_console();
 	init_serial_console();
-
 	setup_gdt();
 	setup_idt();
 	setup_i8259a();
@@ -92,5 +96,5 @@ void setup_arch(void *bootstrap)
 	setup_init();
 	setup_apic();
 	setup_local_apic();
-	__asm__ ("sti");
+	__asm__ ("int $0x80");
 }
