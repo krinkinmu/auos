@@ -26,8 +26,8 @@ struct idt_ptr {
 	uint32_t base;
 } __attribute__((packed));
 
-void init_isr_gate(struct idt_entry *entry, void (*isr)(void), unsigned dpl);
-void init_trap_gate(struct idt_entry *entry, void (*sc)(void), unsigned dpl);
+void init_isr_gate(struct idt_entry *entry, unsigned long isr, unsigned dpl);
+void init_trap_gate(struct idt_entry *entry, unsigned long sc, unsigned dpl);
 void init_idt_ptr(struct idt_ptr *ptr, struct idt_entry *table, size_t size);
 void set_idt(const struct idt_ptr *ptr);
 
