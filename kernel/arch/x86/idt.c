@@ -2,18 +2,17 @@
 #include <arch/gdt.h>
 
 static void init_gate(struct idt_entry *entry, unsigned long offset,
-			uint16_t selector, unsigned type)
+			unsigned long selector, unsigned long type)
 {
-	const uint64_t descr = ((uint64_t)offset & 0x0000FFFFUL) |
-				(((uint64_t)offset & 0xFFFF0000UL) << 32) |
-				((uint64_t)selector << 16) |
-				((uint64_t)type << 40);
-	entry->entry = descr;
+	const unsigned long low = (offset & 0xFFFFUL) | (selector << 16);
+	const unsigned long high = (offset & 0xFFFF0000UL) | type;
+
+	entry->entry = ((uint64_t)high << 32) | low;
 }
 
 void init_isr_gate(struct idt_entry *entry, unsigned long isr, unsigned dpl)
 {
-	init_gate(entry, isr, KERNEL_CODE_SELECTOR, INTERRUPT_GATE | dpl);
+	init_gate(entry, isr, KERNEL_CODE_SELECTOR, INT_GATE | dpl);
 }
 
 void init_trap_gate(struct idt_entry *entry, unsigned long sc, unsigned dpl)
@@ -23,7 +22,7 @@ void init_trap_gate(struct idt_entry *entry, unsigned long sc, unsigned dpl)
 
 void init_idt_ptr(struct idt_ptr *ptr, struct idt_entry *table, size_t size)
 {
-	ptr->size = (uint16_t)size;
+	ptr->size = (uint16_t)size * sizeof(*table);
 	ptr->base = (uint32_t)table;
 }
 

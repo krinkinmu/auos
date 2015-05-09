@@ -6,14 +6,15 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define IDT_PRESENT    BITU(7)
-#define IDT_USER    (BITU(5) | BITU(6))
-#define IDT_KERNEL  0
-#define IDT_INTGATE32  (BITU(3) | BITU(2) | BITU(1))
-#define IDT_TRAPGATE32 (BITU(3) | BITU(2) | BITU(1) | BITU(0))
+#define IDT_PRESENT    BITU(15)
+#define IDT_USER       (BITU(13) | BITU(14))
+#define IDT_KERNEL     0
+#define IDT_GATE32     BITU(11)
+#define IDT_INT_GATE   (BITU(9) | BITU(10))
+#define IDT_TRAP_GATE  (BITU(8) | BITU(9) | BITU(10))
 
-#define INTERRUPT_GATE (IDT_PRESENT | IDT_INTGATE32)
-#define TRAP_GATE      (IDT_PRESENT | IDT_TRAPGATE32)
+#define INT_GATE       (IDT_PRESENT | IDT_INT_GATE | IDT_GATE32)
+#define TRAP_GATE      (IDT_PRESENT | IDT_TRAP_GATE | IDT_GATE32)
 
 #define IDT_SIZE 256
 
