@@ -1,5 +1,5 @@
 ARCH_ASM_SOURCES := \
-	interrupt.S
+	raw_irq_handler.S
 
 ARCH_C_SOURCES   := \
 	setup.c \

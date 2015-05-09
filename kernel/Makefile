@@ -5,8 +5,8 @@ KERN_DIR    := $(CWD)
 ARCH_DIR    := $(KERN_DIR)/arch/$(ARCH)
 INCLUDES    := -I$(KERN_DIR)/include -I$(KERN_DIR)/include/$(ARCH)
 BASE_LFLAGS := -nostdlib -nostdinc
-BASE_CFLAGS := -Wall -Wextra -Werror -std=c99 -pedantic \
-               -ffreestanding -m32 -g -O2 $(INCLUDES)
+BASE_CFLAGS := -ffreestanding -m32 -g -O2 $(INCLUDES) -std=c99 \
+	-Wall -Wextra -Werror -std=c99 -pedantic
 BASE_AFLAGS := -DASM_FILE -m32 -g $(INCLUDES)
 
 export CC          ?= clang
