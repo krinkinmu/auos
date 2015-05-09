@@ -35,9 +35,25 @@ static void setup_gdt(void)
 static struct idt_entry idt[IDT_SIZE];
 static struct idt_ptr idt_ptr;
 
-void irq_process(void *unused) {
-	(void) unused;
-	panic("Unexpected (so far) interrupt\n");
+struct arch_irq_context {
+	uint32_t esi;
+	uint32_t edi;
+	uint32_t ebp;
+	uint32_t edx;
+	uint32_t ecx;
+	uint32_t ebx;
+	uint32_t eax;
+	uint32_t irq;
+	uint32_t err;
+	uint32_t eip;
+	uint32_t cs;
+	uint32_t eflags;
+} __attribute__((packed));
+
+void arch_raw_irq_handler(struct arch_irq_context *ctx) {
+	debug("%x %x %x %x %x\n",
+		ctx->irq, ctx->err, ctx->eip, ctx->cs, ctx->eflags);
+	while (1);
 }
 
 static void setup_idt(void)
@@ -96,5 +112,5 @@ void setup_arch(void *bootstrap)
 	setup_init();
 	setup_apic();
 	setup_local_apic();
-	__asm__ ("int $0x80");
+	__asm__ ("int $0x22");
 }
