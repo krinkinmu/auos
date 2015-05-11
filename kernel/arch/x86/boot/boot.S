@@ -117,8 +117,8 @@ gdt_descr:
 
 	/* kernel stack is in .bss section */
 	.bss
-	.align PAGE_SIZE
-	.space BOOT_TIME_STACK_SIZE
+	.align KERNEL_STACK_ALIGN
+	.space KERNEL_STACK_SIZE
 stack_top:
 
 	.align PAGE_SIZE

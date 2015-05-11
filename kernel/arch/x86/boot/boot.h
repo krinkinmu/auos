@@ -10,9 +10,6 @@
 #define MB_PAGE_ALIGN        0x00000001
 #define MB_MEMORY_INFO       0x00000002
 
-/* common boot definitions */
-#define BOOT_TIME_STACK_SIZE 0x4000
-
 #define BOOT_CS_ENTRY        1
 #define BOOT_CS              (BOOT_CS_ENTRY << 3)
 #define BOOT_DS_ENTRY        2
