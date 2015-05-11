@@ -14,6 +14,9 @@
 #define PTRS_PER_PT          1024
 #define PTRS_PER_PGD         1024
 
+#define KERNEL_STACK_SIZE    (2 * PAGE_SIZE)
+#define KERNEL_STACK_ALIGN   (2 * PAGE_SIZE)
+
 #define PAGE_FRAME(addr)     ((addr) >> PAGE_SHIFT)
 #define PAGE_DIR(addr)       ((addr) >> PGDIR_SHIFT)
 

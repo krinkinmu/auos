@@ -22,7 +22,8 @@ static inline struct task_state *task_state(struct task *task)
 
 static inline struct task *current_task(void)
 {
-	const unsigned long sp = (((unsigned long)&sp) & ~(PAGE_SIZE - 1));
+	unsigned long sp = ((unsigned long)&sp) & ~(KERNEL_STACK_ALIGN - 1);
+
 	return (struct task *)sp;
 }
 
