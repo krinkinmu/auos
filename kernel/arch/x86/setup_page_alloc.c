@@ -10,13 +10,14 @@ static void init_zone(struct page_list_data *node, struct zone *zone,
 			size_t start_pfn, size_t end_pfn)
 {
 	zone->node = node;
-	zone->pages = end_pfn - start_pfn;
+	zone->start_pfn = start_pfn;
+	zone->end_pfn = end_pfn;
 
 	for (size_t i = 0; i != MAX_ORDER; ++i)
 		list_init_head(&zone->free_area[i]);
 
 	for (size_t pfn = start_pfn; pfn != end_pfn; ++pfn) {
-		struct page *page = pfn_to_page(pfn - start_pfn);
+		struct page *page = pfn_to_page(pfn - node->start_pfn);
 
 		list_init_head(&page->chain);
 		page->zone = zone;
@@ -26,7 +27,9 @@ static void init_zone(struct page_list_data *node, struct zone *zone,
 	size_t free = 0;
 	for (size_t pfn = start_pfn; pfn != end_pfn; ++pfn) {
 		if (boot_mem_is_free(pfn << PAGE_SHIFT, PAGE_SIZE)) {
-			free_pages(pfn_to_page(pfn - start_pfn), 0);
+			struct page *page = pfn_to_page(pfn - node->start_pfn);
+
+			free_pages(page, 0);
 			++free;
 		}
 	}

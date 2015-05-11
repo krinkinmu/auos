@@ -34,7 +34,8 @@ enum zone_type {
 struct zone {
 	struct page_list_data *node;
 	struct list_head free_area[MAX_ORDER];
-	size_t pages;
+	size_t start_pfn;
+	size_t end_pfn;
 };
 
 struct page_list_data {
@@ -56,19 +57,14 @@ static inline struct page_list_data *zone_node(struct zone *zone)
 	return zone->node;
 }
 
-static inline size_t buddy_index(size_t idx, unsigned order)
-{
-	return idx ^ (1 << order);
-}
-
 static inline size_t page_to_pfn(const struct page *page)
 {
-	return page - nodes[0].pages;
+	return nodes[0].start_pfn + (page - nodes[0].pages);
 }
 
-static inline struct page *pfn_to_page(size_t idx)
+static inline struct page *pfn_to_page(size_t pfn)
 {
-	return nodes[0].pages + idx;
+	return nodes[0].pages + (pfn - nodes[0].start_pfn);
 }
 
 static inline uintptr_t page_physical_address(const struct page *page)

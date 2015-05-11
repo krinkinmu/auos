@@ -2,17 +2,22 @@
 #include <kernel/kernel.h>
 #include <kernel/debug.h>
 
+static inline size_t buddy_pfn(size_t pfn, unsigned order)
+{
+	return pfn ^ (1 << order);
+}
+
 static void __free_pages_node(struct page *pages, int order, struct zone *zone)
 {
-	size_t idx = page_to_pfn(pages);
+	size_t pfn = page_to_pfn(pages);
 
 	while (order < MAX_ORDER - 1) {
-		const size_t bidx = buddy_index(idx, order);
+		const size_t bpfn = buddy_pfn(pfn, order);
 
-		if (bidx >= zone->pages)
+		if (bpfn >= zone->end_pfn || bpfn < zone->start_pfn)
 			break;
 
-		struct page *const buddy = pfn_to_page(bidx);
+		struct page *const buddy = pfn_to_page(bpfn);
 
 		if (order != buddy->order)
 			break;
@@ -20,9 +25,9 @@ static void __free_pages_node(struct page *pages, int order, struct zone *zone)
 		list_remove(&buddy->chain);
 		++order;
 
-		if (bidx < idx) {
+		if (bpfn < pfn) {
 			pages = buddy;
-			idx = bidx;
+			pfn = bpfn;
 		}
 	}
 	pages->order = order;
@@ -57,9 +62,9 @@ static struct page *__alloc_pages_node(int order, struct zone *zone)
 
 	list_remove(&page->chain);
 	while (corder > order) {
-		const size_t idx = page_to_pfn(page);
-		const size_t bidx = buddy_index(idx, --corder);
-		struct page *const buddy = pfn_to_page(bidx);
+		const size_t pfn = page_to_pfn(page);
+		const size_t bpfn = buddy_pfn(pfn, --corder);
+		struct page *const buddy = pfn_to_page(bpfn);
 
 		buddy->order = corder;
 		list_insert_before(&zone->free_area[corder], &buddy->chain);
