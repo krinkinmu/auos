@@ -1,136 +1,165 @@
 #include <kernel/slab_cache.h>
 #include <kernel/kernel.h>
 #include <kernel/debug.h>
+#include <kernel/utility.h>
 
-void slab_cache_create(struct slab_cache *cache, size_t size, size_t align)
+#include <limits.h>
+
+#define SLAB_ORDER 1
+
+typedef unsigned long bitmap_t;
+
+struct slab {
+	struct list_head link;
+	struct slab_cache *cache;
+	unsigned free;
+	bitmap_t bitmap[];
+};
+
+static unsigned slab_object_size(unsigned size, unsigned alignment)
 {
-	list_init_head(&cache->partial);
-	list_init_head(&cache->full);
-
-	if (size < sizeof(struct slab_place))
-		size = sizeof(struct slab_place);
-
-	cache->object_size = align_up(size, align);
-	cache->object_alignment = align;
+	if (alignment >= size)
+		return alignment;
+	return alignment * ((size + alignment - 1) / alignment);
 }
 
-void slab_cache_destroy(struct slab_cache *cache)
+static unsigned slab_object_count(unsigned size, unsigned space)
 {
-	assert(list_empty(&cache->full),
-		"Slab cache still contains entries\n");
+	const unsigned ssize = sizeof(struct slab);
+	const unsigned bsize = sizeof(bitmap_t);
+
+	return (CHAR_BIT * (space - ssize - bsize) + 1)
+		/ (CHAR_BIT * size + 1);
+}
+
+static void slab_init(struct slab_cache *cache, struct slab *slab)
+{
+	memset(slab, 0, cache->object_offset);
+	slab->cache = cache;
+	slab->free = cache->object_count;
+}
+
+static void slab_cache_init(struct slab_cache *cache, size_t size,
+			size_t align)
+{
+	const unsigned space = PAGE_SIZE << SLAB_ORDER;
+	const unsigned object_size = slab_object_size(size, align);
+	const unsigned object_count = slab_object_count(object_size, space);
+	const unsigned object_offset = space - object_size * object_count;
+
+	list_init_head(&cache->partial);
+	list_init_head(&cache->full);
+	cache->object_size = object_size;
+	cache->object_count = object_count;
+	cache->object_offset = object_offset;
+}
+
+static void slab_cache_fini(struct slab_cache *cache)
+{
+	assert(list_empty(&cache->full), "Slab cache is still not empty\n");
 
 	struct list_head *head = &cache->partial;
 	struct list_head *curr = head->next;
 
 	while (curr != head) {
-		struct slab *slab = container_of(curr, struct slab, free_list);
-		assert(slab->size, "Slab cache still contains entries\n");
+		struct slab *slab = CONTAINER_OF(curr, struct slab, link);
+		struct page *page = pfn_to_page(phys_addr(slab) >> PAGE_SHIFT);
+
+		assert(slab->free == cache->object_count,
+			"Slab cache is still not empty\n");
 		curr = curr->next;
+		free_pages(page, SLAB_ORDER);
 	}
 }
 
-static void slab_init(struct slab_cache *cache, struct slab *slab,
-			char *begin, char *end)
+static void slab_cache_grow(struct slab_cache *cache, unsigned flags)
 {
-	const size_t align = cache->object_alignment;
-	const size_t size = cache->object_size;
-
-	begin = (char *)align_up((uintptr_t)begin, align);
-	end = (char *)align_down((uintptr_t)end, align);
-
-	assert(begin + size <= end, "Slab size too small\n");
-
-	list_init_head(&slab->free_list);
-	slab->cache = cache;
-	slab->size = 0;
-
-	struct slab_place *const place = (void *)begin;
-
-	place->size = end - begin;
-	list_insert_before(&slab->free_list, &place->link);
-	list_insert_before(&cache->partial, &slab->slab_list);
-}
-
-static void slab_cache_grow(struct slab_cache *cache, unsigned order,
-			unsigned flags)
-{
-	struct page *pages = alloc_pages(order, flags);
+	struct page *pages = alloc_pages(SLAB_ORDER, flags);
 
 	if (!pages)
 		return;
 
-	char *ptr = page_virtual_address(pages);
-	struct slab *slab = (struct slab *)ptr;
+	struct slab *slab = (struct slab *)page_virtual_address(pages);
 
-	slab_init(cache, slab, ptr + sizeof(*slab),
-				ptr + (1 << (order + PAGE_SHIFT)));
-
-	for (unsigned i = 0; i != 1u << order; ++i)
-		(pages + i)->slab = slab;
+	slab_init(cache, slab);
+	list_insert_before(&cache->partial, &slab->link);
+	for (unsigned i = 0; i != BITU(SLAB_ORDER); ++i)
+		pages[i].slab = slab;
 }
 
-static inline int slab_is_full(const struct slab *slab)
+static void *slab_alloc(struct slab_cache *cache, struct slab *slab)
 {
-	return list_empty(&slab->free_list);
+	unsigned i = 0;
+
+	while (~slab->bitmap[i] == 0)
+		++i;
+
+	bitmap_t bmap = slab->bitmap[i];
+	unsigned j = 0;
+
+	while (bmap % 2) {
+		bmap >>= 1;
+		++j;
+	}
+
+	unsigned off = i * sizeof(bitmap_t) * CHAR_BIT + j;
+
+	--slab->free;
+	slab->bitmap[i] |= ((bitmap_t)1 << j);
+	return (char *)slab + cache->object_offset + off * cache->object_size;
 }
 
-static inline int slab_cache_is_full(const struct slab_cache *cache)
+static void slab_free(struct slab_cache *cache, struct slab *slab, char *ptr)
 {
-	return list_empty(&cache->partial);
+	const unsigned offset = cache->object_offset;
+	const unsigned size = cache->object_size;
+	const unsigned wsize = sizeof(bitmap_t) * 8;
+	const unsigned bit = (ptr - ((char *)slab + offset)) / size;
+	const unsigned word = bit / wsize;
+	const unsigned shift = bit % wsize;
+
+	slab->bitmap[word] &= ~((bitmap_t)1 << shift);
+	++slab->free;
 }
 
-static void *slab_alloc_in_slab(struct slab_cache *cache, struct slab *slab)
+void slab_cache_create(struct slab_cache *cache, size_t size, size_t align)
 {
-	struct slab_place *place = container_of(slab->free_list.next,
-						struct slab_place, link);
-	void *ptr = (char *)place + (place->size - cache->object_size);
+	slab_cache_init(cache, size, align);
+}
 
-	if (place->size == cache->object_size)
-		list_remove(&place->link);
-	else
-		place->size -= cache->object_size;
-	++slab->size;
-	return ptr;
+void slab_cache_destroy(struct slab_cache *cache)
+{
+	slab_cache_fini(cache);
 }
 
 void *slab_cache_alloc(struct slab_cache *cache, unsigned flags)
 {
-	if (slab_cache_is_full(cache))
-		slab_cache_grow(cache, 0, flags);
+	if (list_empty(&cache->partial))
+		slab_cache_grow(cache, flags);
 
-	if (slab_cache_is_full(cache))
+	if (list_empty(&cache->partial))
 		return 0;
 
-	struct slab *slab = container_of(cache->partial.next,
-						struct slab, slab_list);
-	void *ptr = slab_alloc_in_slab(cache, slab);
+	struct slab *slab =
+		CONTAINER_OF(cache->partial.next, struct slab, link);
+	void *ptr = slab_alloc(cache, slab);
 
-	if (slab_is_full(slab)) {
-		list_remove(&slab->slab_list);
-		list_insert_after(&cache->full, &slab->slab_list);
+	if (!slab->free) {
+		list_remove(&slab->link);
+		list_insert_after(&cache->full, &slab->link);
 	}
 	return ptr;
 }
 
-static void slab_free_in_slab(struct slab_cache *cache, struct slab *slab,
-			void *ptr)
-{
-	struct slab_place *place = ptr;
-
-	place->size = cache->object_size;
-	list_insert_before(&slab->free_list, &place->link);
-	--slab->size;
-}
-
 void slab_cache_free(struct slab_cache *cache, void *ptr)
 {
-	struct page *const page = pfn_to_page(phys_addr(ptr) >> PAGE_SHIFT);
-	struct slab *const slab = page->slab;
-	const int full = slab_is_full(slab);
+	struct page *page = pfn_to_page(phys_addr(ptr) >> PAGE_SHIFT);
+	struct slab *slab = page->slab;
+	int full = (slab->free == 0);
 
-	slab_free_in_slab(cache, slab, ptr);
+	slab_free(cache, slab, ptr);
 	if (full) {
-		list_remove(&slab->slab_list);
-		list_insert_before(&cache->partial, &slab->slab_list);
+		list_remove(&slab->link);
+		list_insert_before(&cache->partial, &slab->link);
 	}
 }

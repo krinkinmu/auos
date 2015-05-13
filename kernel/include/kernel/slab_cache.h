@@ -6,25 +6,13 @@
 
 #include <stddef.h>
 
-struct slab_cache;
-struct slab {
-	struct list_head free_list;
-	struct list_head slab_list;
-	struct slab_cache *cache;
-	size_t size;
-};
-
+struct slab;
 struct slab_cache {
 	struct list_head partial;
 	struct list_head full;
-
-	size_t object_size;
-	size_t object_alignment;
-};
-
-struct slab_place {
-	struct list_head link;
-	size_t size;
+	unsigned object_size;
+	unsigned object_count;
+	unsigned object_offset;
 };
 
 void slab_cache_create(struct slab_cache *cache, size_t size, size_t align);
