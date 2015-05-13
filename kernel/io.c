@@ -11,8 +11,8 @@ void putchar(int c)
 	const char ch = c;
 
 	while (it != &consoles) {
-		const struct console *const console =
-					container_of(it, struct console, link);
+		const struct console *console =
+			CONTAINER_OF(it, struct console, link);
 
 		console->write(&ch, 1);
 		it = it->next;

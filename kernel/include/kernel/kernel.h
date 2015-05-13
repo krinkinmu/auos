@@ -42,9 +42,12 @@ static inline intmax_t max(intptr_t x, intmax_t y)
 }
 
 
-#define container_of(ptr, type, member) \
+#define CONTAINER_OF(ptr, type, member) \
         ((type *)((char *)(ptr) - offsetof(type, member)))
 
-#define align(a) __attribute__((aligned(a)))
+#define ALIGN(a) __attribute__((aligned(a)))
+
+#define ALIGNMENT_OF(type) \
+	offsetof(struct { char dummy; type member; }, member)
 
 #endif /*__KERNEL_KERNEL_H__*/

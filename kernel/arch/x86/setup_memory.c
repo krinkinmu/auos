@@ -69,7 +69,7 @@ static void reserve_kernel_memory(void)
 	boot_mem_reserve(kern_addr, kern_end);
 }
 
-pte_t kernel_page_tables[KERNEL_PAGE_FRAMES] align(PAGE_SIZE);
+pte_t kernel_page_tables[KERNEL_PAGE_FRAMES] ALIGN(PAGE_SIZE);
 
 size_t page_frames(void)
 {
