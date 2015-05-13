@@ -51,7 +51,7 @@ struct arch_irq_context {
 } __attribute__((packed));
 
 void arch_raw_irq_handler(struct arch_irq_context *ctx) {
-	debug("%x %x %x %x %x\n",
+	debug("%d %x %x %x %x\n",
 		ctx->irq, ctx->err, ctx->eip, ctx->cs, ctx->eflags);
 	while (1);
 }
@@ -112,5 +112,4 @@ void setup_arch(void *bootstrap)
 	setup_init();
 	setup_apic();
 	setup_local_apic();
-	__asm__ ("int $0x22");
 }
