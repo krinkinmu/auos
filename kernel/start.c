@@ -1,4 +1,5 @@
 #include <kernel/page_alloc.h>
+#include <kernel/task.h>
 #include <kernel/kernel.h>
 #include <kernel/debug.h>
 
@@ -19,7 +20,8 @@ void zone_stat(struct zone *zone)
 			++total;
 		}
 
-		debug("There are %d blocks of order %d\n", total, i);
+		if (total)
+			debug("There are %d blocks of order %d\n", total, i);
 	}
 }
 
@@ -29,11 +31,20 @@ void stat(void)
 		zone_stat(&nodes[0].zones[i]);
 }
 
+static void init(void)
+{
+	panic("Task Switched!!!\n");
+}
+
 void start_kernel(void *bootstrap)
 {
 	setup_arch(bootstrap);
-
+	
 	stat();
+
+	struct task *task = alloc_task();
+	task_init(task, &init);
+	task_switch(task);
 
 	while (1);
 }
