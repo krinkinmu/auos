@@ -1,24 +1,15 @@
 #ifndef __KERNEL_TASK_H__
 #define __KERNEL_TASK_H__
 
-#include <kernel/kernel.h>
 #include <kernel/list.h>
-
-#include <arch/task_state.h>
 #include <arch/memory.h>
 
 typedef int tid_t;
 
 struct task {
 	struct list_head link;
-	struct task_state *state;
 	tid_t tid;
 };
-
-static inline struct task_state *task_state(struct task *task)
-{
-	return task->state;
-}
 
 static inline struct task *current_task(void)
 {
@@ -27,6 +18,9 @@ static inline struct task *current_task(void)
 	return (struct task *)sp;
 }
 
-struct task *init_task(void);
+struct task *alloc_task(void);
+void free_task(struct task *task);
+void task_init(struct task *task, void (*entry)(void));
+void task_switch(struct task *task);
 
 #endif /*__KERNEL_TASK_H__*/
