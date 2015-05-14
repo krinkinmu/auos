@@ -124,9 +124,9 @@ stack_top:
 	.align PAGE_SIZE
 	.global swapper_page_dir
 swapper_page_dir:
-	.fill 1024, 4, 0
+	.space PAGE_SIZE
 
 	.align PAGE_SIZE
 	.global initial_page_dir
 initial_page_dir:
-	.fill 1024, 4, 0
+	.space PAGE_SIZE
