@@ -1,19 +1,18 @@
 #include <kernel/debug.h>
 #include <arch/gdt.h>
 
-void init_gdt_segment(struct gdt_entry *entry, uint32_t limit,
-			uint32_t base, unsigned type)
+void init_gdt_segment(struct gdt_entry *entry, unsigned long limit,
+			unsigned long base, unsigned long type)
 {
-	warn_if(limit > 0xFFFFFul, "Limit overflow\n");
-	warn_if(base > 0xFFFFFFFFul, "Base overflow\n");
+	warn_if(limit > 0xFFFFFUL, "Limit overflow\n");
+	warn_if(base > 0xFFFFFFFFUL, "Base overflow\n");
 
-	const uint64_t descr = ((uint64_t)limit & 0x0FFFFul) |
-				(((uint64_t)limit & 0xF0000ul) << 32) |
-				(((uint64_t)base & 0x00FFFFFFul) << 16) |
-				(((uint64_t)base & 0xFF000000ul) << 32) |
-				(((uint64_t)type & 0xF0FFul) << 40);
+	const uint32_t low = (limit & 0xFFFFUL) | ((base & 0xFFFFUL) << 16);
+	const uint32_t high =
+		(base & 0xFF000000UL) | ((base & 0xFF0000UL) >> 16) |
+		(limit & 0xF0000UL) | (type & 0xF0FF00UL);
 
-	entry->entry = descr;
+	entry->entry = ((uint64_t)high << 32) | low;
 }
 
 void init_gdt_ptr(struct gdt_ptr *ptr, struct gdt_entry *table, size_t size)
