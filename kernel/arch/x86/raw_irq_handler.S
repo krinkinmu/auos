@@ -1,5 +1,5 @@
 	.text
-	.extern arch_raw_irq_handler
+	.extern raw_irq_handler
 	.align 32
 common_irq_handler:
 	pushl %eax
@@ -11,7 +11,7 @@ common_irq_handler:
 	pushl %esi
 	pushl %esp
 
-	call arch_raw_irq_handler
+	call raw_irq_handler
 
 	popl %esp
 	popl %esi
@@ -24,9 +24,9 @@ common_irq_handler:
 	addl $8, %esp
 	iret
 
-	.global raw_irq_handler
+	.global raw_irq_handler_entries
 	.align 16
-raw_irq_handler:
+raw_irq_handler_entries:
 irq = 0
 .rept 256
 	.align 16 // i think 16 bytes is enough for code below

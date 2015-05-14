@@ -3,7 +3,9 @@
 #include <kernel/task.h>
 #include <kernel/acpi.h>
 #include <kernel/irq.h>
+#include <kernel/utility.h>
 
+#include <arch/task_state.h>
 #include <arch/memory.h>
 #include <arch/multiboot.h>
 #include <arch/early_console.h>
@@ -19,13 +21,13 @@ static struct gdt_ptr gdt_ptr;
 static void setup_gdt(void)
 {
 	init_gdt_segment(&gdt[KERNEL_CODE_ENTRY], 0xFFFFFULL, 0x0ULL,
-			KERNEL_CODE_TYPE);
+		KERNEL_CODE_TYPE);
 	init_gdt_segment(&gdt[KERNEL_DATA_ENTRY], 0xFFFFFULL, 0x0ULL,
-			KERNEL_DATA_TYPE);
+		KERNEL_DATA_TYPE);
 	init_gdt_segment(&gdt[USER_CODE_ENTRY], 0xFFFFFULL, 0x0ULL,
-			USER_CODE_TYPE);
+		USER_CODE_TYPE);
 	init_gdt_segment(&gdt[USER_DATA_ENTRY], 0xFFFFFULL, 0x0ULL,
-			USER_DATA_TYPE);
+		USER_DATA_TYPE);
 
 	init_gdt_ptr(&gdt_ptr, gdt, GDT_SIZE);
 	set_gdt(&gdt_ptr);
@@ -50,7 +52,7 @@ struct arch_irq_context {
 	uint32_t eflags;
 } __attribute__((packed));
 
-void arch_raw_irq_handler(struct arch_irq_context *ctx) {
+void raw_irq_handler(struct arch_irq_context *ctx) {
 	debug("%d %x %x %x %x\n",
 		ctx->irq, ctx->err, ctx->eip, ctx->cs, ctx->eflags);
 	while (1);
@@ -58,44 +60,70 @@ void arch_raw_irq_handler(struct arch_irq_context *ctx) {
 
 static void setup_idt(void)
 {
-	extern char raw_irq_handler[];
+	extern char raw_irq_handler_entries[];
+	const unsigned long entries = (unsigned long)raw_irq_handler_entries;
 	
-	for (unsigned i = 0; i != 256; ++i) {
-		const unsigned long isr =
-			(unsigned long)(raw_irq_handler + i * 16);
-
-		init_isr_gate(idt + i, isr, IDT_KERNEL);
-	}
+	for (unsigned i = 0; i != 256; ++i)
+		init_isr_gate(idt + i, entries + i * 16, IDT_KERNEL);
 
 	init_idt_ptr(&idt_ptr, idt, IDT_SIZE);
 	set_idt(&idt_ptr);
 }
 
-static struct task *init;
+static inline struct task_state *task_state(struct task *task)
+{
+	return (struct task_state *)(task + 1);
+}
 
-static void setup_init(void)
+static inline void *task_stack(struct task *task)
+{
+	return (char *)task + KERNEL_STACK_SIZE;
+}
+
+static void setup_swapper(void)
 {
 	struct task *task = current_task();
-	struct task_state *state = (struct task_state *)(task + 1);
+	struct task_state *state = task_state(task);
 
-	list_init_head(&task->link);
-	task->state = (struct task_state *)(init + 1);
-	task->tid = 1;
-
+	memset(state, 0, sizeof(*state));
 	state->prev_tss = TSS2_SELECTOR;
-	state->ring0_esp = (uint32_t)((char *)task + PAGE_SIZE);
-	state->ring0_ss = KERNEL_DATA_SELECTOR;
-	state->cr3 = (uint32_t)phys_addr(swapper_page_dir);
-
 	init_gdt_segment(&gdt[TSS1_ENTRY], sizeof(*state), (uint32_t)state,
 				FREE_TSS_TYPE);
-	init = task;
 	load_tr(TSS1_SELECTOR);
 }
 
-struct task *init_task(void)
+void task_init(struct task *task, void (*entry)(void))
 {
-	return init;
+	struct task_state *state = task_state(task);
+
+	memset(state, 0, sizeof(*state));
+	state->esp = (uint32_t)task_stack(task);
+	state->ss = KERNEL_DATA_SELECTOR;
+	state->ds = KERNEL_DATA_SELECTOR;
+	state->es = KERNEL_DATA_SELECTOR;
+	state->fs = KERNEL_DATA_SELECTOR;
+	state->gs = KERNEL_DATA_SELECTOR;
+	state->cs = KERNEL_CODE_SELECTOR;
+	state->eip = (uint32_t)entry;
+	state->cr3 = (uint32_t)phys_addr(swapper_page_dir);
+}
+
+void task_switch(struct task *next)
+{
+	struct task *prev = current_task();
+	uint16_t tss = task_state(prev)->prev_tss;
+	struct task_state *state = task_state(next);
+
+	init_gdt_segment(&gdt[GDT_ENTRY(tss)], sizeof(*state), (uint32_t)state,
+		FREE_TSS_TYPE);
+
+	if (tss == TSS1_SELECTOR) {
+		state->prev_tss = TSS2_SELECTOR;
+		__asm__ ("ljmp %0, $0" : : "i"(TSS1_SELECTOR));
+	} else {
+		state->prev_tss = TSS1_SELECTOR;
+		__asm__ ("ljmp %0, $0" : : "i"(TSS2_SELECTOR));
+	}
 }
 
 void setup_arch(void *bootstrap)
@@ -108,8 +136,8 @@ void setup_arch(void *bootstrap)
 	setup_idt();
 	setup_i8259a();
 	setup_memory(mbi);
+	setup_swapper();
 	setup_acpi();
-	setup_init();
 	setup_apic();
 	setup_local_apic();
 }
