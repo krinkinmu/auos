@@ -8,4 +8,5 @@ C_SOURCES   := \
 	console.c \
 	bootmem.c \
 	acpi.c \
-	irq.c
+	irq.c \
+	task.c
