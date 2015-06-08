@@ -1,4 +1,5 @@
 #include <kernel/page_alloc.h>
+#include <kernel/scheduler.h>
 #include <kernel/task.h>
 #include <kernel/kernel.h>
 #include <kernel/debug.h>
@@ -33,7 +34,10 @@ void stat(void)
 
 static void init(void)
 {
-	panic("Task Switched!!!\n");
+	while (1) {
+		debug("Task Switched!!!\n");
+		schedule();
+	}
 }
 
 void start_kernel(void *bootstrap)
@@ -44,7 +48,8 @@ void start_kernel(void *bootstrap)
 
 	struct task *task = alloc_task();
 	task_init(task, &init);
-	task_switch(task);
+	schedule_task(task);
 
-	while (1);
+	while (1)
+		schedule();
 }

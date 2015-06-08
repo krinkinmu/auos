@@ -9,4 +9,5 @@ C_SOURCES   := \
 	bootmem.c \
 	acpi.c \
 	irq.c \
-	task.c
+	task.c \
+	scheduler.c
