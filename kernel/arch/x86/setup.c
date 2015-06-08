@@ -85,8 +85,11 @@ static void setup_swapper(void)
 	struct task *task = current_task();
 	struct task_state *state = task_state(task);
 
+	debug("Swapper task %x\n", (unsigned)task);
+
 	memset(state, 0, sizeof(*state));
 	state->prev_tss = TSS2_SELECTOR;
+	state->cr3 = (uint32_t)phys_addr(swapper_page_dir);
 	init_gdt_segment(&gdt[TSS1_ENTRY], sizeof(*state), (uint32_t)state,
 				FREE_TSS_TYPE);
 	load_tr(TSS1_SELECTOR);
@@ -108,11 +111,53 @@ void task_init(struct task *task, void (*entry)(void))
 	state->cr3 = (uint32_t)phys_addr(swapper_page_dir);
 }
 
+/*
+static void print_task_state(struct task_state *state)
+{
+	#define PRINT_STATE(arg) debug(#arg " %x\n", state->arg)
+	PRINT_STATE(prev_tss);
+	PRINT_STATE(ring0_esp);
+	PRINT_STATE(ring0_ss);
+	PRINT_STATE(ring1_esp);
+	PRINT_STATE(ring1_ss);
+	PRINT_STATE(ring2_esp);
+	PRINT_STATE(ring2_ss);
+	PRINT_STATE(cr3);
+	PRINT_STATE(eip);
+	PRINT_STATE(eflags);
+	PRINT_STATE(eax);
+	PRINT_STATE(ecx);
+	PRINT_STATE(edx);
+	PRINT_STATE(ebx);
+	PRINT_STATE(esp);
+	PRINT_STATE(ebp);
+	PRINT_STATE(esi);
+	PRINT_STATE(edi);
+	PRINT_STATE(es);
+	PRINT_STATE(cs);
+	PRINT_STATE(ss);
+	PRINT_STATE(ds);
+	PRINT_STATE(fs);
+	PRINT_STATE(gs);
+	PRINT_STATE(lds);
+	PRINT_STATE(trap);
+	PRINT_STATE(iopb);
+	#undef PRINT_STATE
+}
+*/
 void task_switch(struct task *next)
 {
 	struct task *prev = current_task();
 	uint16_t tss = task_state(prev)->prev_tss;
 	struct task_state *state = task_state(next);
+
+/*
+	debug("Next TSS selector %x\n", tss);
+	debug("Current task state:\n");
+	print_task_state(task_state(prev));
+	debug("Next task state:\n");
+	print_task_state(task_state(next));
+*/
 
 	init_gdt_segment(&gdt[GDT_ENTRY(tss)], sizeof(*state), (uint32_t)state,
 		FREE_TSS_TYPE);
